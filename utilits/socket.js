@@ -13,17 +13,35 @@ const initSocket = (server) => {
   });
 
   io.on("connection", (socket) => {
-    socket.on("register", async ({ userId, role }) => {
+    socket.on("register", async ({ userId, role, isAvailable }) => {
       socket.join(userId);
       if (role === "mechanic") {
         await Mechanicmodel.findByIdAndUpdate(userId, {
           socketId: socket.id,
-          isAvailable: true,
+          isAvailable: isAvailable,
         });
       }
       if (role === "user") {
         await Usermodel.findByIdAndUpdate(userId, {
           socketId: socket.id,
+        });
+      }
+    });
+
+    socket.on("updateAvailability", async ({ userId, isAvailable }) => {
+      try {
+       let res=await Mechanicmodel.findByIdAndUpdate(userId, {
+          isAvailable: isAvailable,
+        });
+        
+        socket.emit("availabilityUpdated", {
+          success: true,
+          isAvailable: isAvailable,
+        });
+      } catch (error) {
+        socket.emit("availabilityUpdated", {
+          success: false,
+          error: "Failed to update availability",
         });
       }
     });

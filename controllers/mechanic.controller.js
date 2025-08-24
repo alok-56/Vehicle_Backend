@@ -24,36 +24,24 @@ const CreateMechanic = async (req, res, next) => {
       }
 
       // otp generation
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const otp = Math.floor(1000 + Math.random() * 9000).toString();
       let otpcreation = await Otpmodel.create({
         otp: otp,
         email: email,
       });
 
       // send email
+      await SendEmail(email, "OTP", name, {
+        otp: otp,
+      });
 
-      res.status(STATUS_CODE.SUCCESS).json({
+      return res.status(STATUS_CODE.SUCCESS).json({
         status: true,
         message: "Otp send successfully",
       });
     }
     // resister logic
     else {
-      // check vehicle
-      if (
-        ![
-          APPLICATION_CONSTANT.CAR,
-          APPLICATION_CONSTANT.BIKE,
-          APPLICATION_CONSTANT.BUS,
-          APPLICATION_CONSTANT.AUTO,
-          APPLICATION_CONSTANT.TRUCK,
-        ].includes(vehicle_type)
-      ) {
-        return next(
-          new AppError("vechile not matched", STATUS_CODE.VALIDATIONERROR)
-        );
-      }
-
       // check referral code
       if (referral_code) {
         let referraluser = await Mechanicmodel.findOne({
@@ -80,7 +68,7 @@ const CreateMechanic = async (req, res, next) => {
       }
 
       // otp generation
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const otp = Math.floor(1000 + Math.random() * 9000).toString();
       let otpcreation = await Otpmodel.create({
         otp: otp,
         email: email,
@@ -91,7 +79,7 @@ const CreateMechanic = async (req, res, next) => {
         otp: otp,
       });
 
-      res.status(STATUS_CODE.SUCCESS).json({
+      return res.status(STATUS_CODE.SUCCESS).json({
         status: true,
         message: "Otp send successfully",
       });
@@ -104,16 +92,8 @@ const CreateMechanic = async (req, res, next) => {
 // verify user
 const VerifyMechanic = async (req, res, next) => {
   try {
-    let {
-      name,
-      email,
-      phone_number,
-      vehicle_type,
-      type,
-      otp,
-      referral_code,
-      token,
-    } = req.body;
+    let { name, email, phone_number, vehicle_type, type, otp, referral_code } =
+      req.body;
     if (type === "login") {
       // user check
       let user = await Mechanicmodel.findOne({ email: email });
@@ -123,7 +103,7 @@ const VerifyMechanic = async (req, res, next) => {
 
       // otp check
       let fetchotp = await Otpmodel.findOne({ email: email, otp: otp });
-      if (fetchotp) {
+      if (!fetchotp) {
         return next(
           new AppError("Incorrect otp or expired", STATUS_CODE.VALIDATIONERROR)
         );
@@ -135,7 +115,7 @@ const VerifyMechanic = async (req, res, next) => {
       // delete otp
       await Otpmodel.findByIdAndDelete(fetchotp._id);
 
-      res.status(STATUS_CODE.SUCCESS).json({
+      return res.status(STATUS_CODE.SUCCESS).json({
         status: true,
         message: "User logedin successfully",
         token: token,
@@ -143,7 +123,7 @@ const VerifyMechanic = async (req, res, next) => {
     } else {
       // otp check
       let fetchotp = await Otpmodel.findOne({ email: email, otp: otp });
-      if (fetchotp) {
+      if (!fetchotp) {
         return next(new AppError("Incorrect otp", STATUS_CODE.VALIDATIONERROR));
       }
       const referaalcode = Math.floor(
@@ -160,10 +140,12 @@ const VerifyMechanic = async (req, res, next) => {
       });
 
       // create referral
-      await Referralmodel.create({
-        userid: newuser._id,
-        refer_code: referral_code,
-      });
+      if (referral_code) {
+        await Referralmodel.create({
+          userid: newuser._id,
+          refer_code: referral_code,
+        });
+      }
 
       // token generation
       let token = await GenerateToken(newuser._id);
@@ -171,9 +153,9 @@ const VerifyMechanic = async (req, res, next) => {
       // delete otp
       await Otpmodel.findByIdAndDelete(fetchotp._id);
 
-      res.status(STATUS_CODE.SUCCESS).json({
+      return res.status(STATUS_CODE.SUCCESS).json({
         status: true,
-        message: "User logedin successfully",
+        message: "User resister successfully",
         token: token,
       });
     }
@@ -186,32 +168,36 @@ const VerifyMechanic = async (req, res, next) => {
 const Sendforverification = async (req, res, next) => {
   try {
     let id = req.mechanic;
-    const { documents, shop_details, payment_details } = req.body;
-    if (!documents || !shop_details || !payment_details) {
-      return next(new AppError("missing fields", STATUS_CODE.VALIDATIONERROR));
+    const { documents, shop_details, payment_details, location } = req.body;
+
+    if (!documents || !shop_details || !payment_details || !location) {
+      return next(new AppError("Missing fields", STATUS_CODE.VALIDATIONERROR));
     }
 
-    // check mechanic
     let mechanic = await Mechanicmodel.findById(id);
     if (!mechanic) {
-      return next(new AppError("user not found", STATUS_CODE.NOTFOUND));
+      return next(new AppError("User not found", STATUS_CODE.NOTFOUND));
     }
 
     const updatedata = {};
     if (documents) updatedata.documents = documents;
     if (shop_details) updatedata.shop_details = shop_details;
-    if (payment_details) updatedata.payment_details;
+    if (payment_details) updatedata.payment_details = payment_details;
+    if (location) updatedata.location = location;
+
     if (mechanic.status === APPLICATION_CONSTANT.PENDING) {
       updatedata.status = APPLICATION_CONSTANT.SENDFORVERIFICATION;
     } else if (mechanic.status === APPLICATION_CONSTANT.SENDFORVERIFICATION) {
       updatedata.status = APPLICATION_CONSTANT.RESENDFORVERIFICATION;
+    } else if (mechanic.status === APPLICATION_CONSTANT.REJECTED) {
+      updatedata.status = APPLICATION_CONSTANT.RESENDFORVERIFICATION;
     }
 
-    await Mechanicmodel.findByIdAndUpdate(updatedata);
+    await Mechanicmodel.findByIdAndUpdate(id, updatedata, { new: true });
 
     return res.status(STATUS_CODE.SUCCESS).json({
       status: true,
-      message: "Your application is successfully send for verification",
+      message: "Your application is successfully sent for verification",
     });
   } catch (error) {
     return next(new AppError(error.message, STATUS_CODE.SERVERERROR));
@@ -254,15 +240,22 @@ const GetallMechanic = async (req, res, next) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
+    const { status } = req.query;
+
+    // Create filter object
+    const filter = {};
+    if (status) {
+      filter.status = status;
+    }
 
     const [users, total] = await Promise.all([
-      Mechanicmodel.find().skip(skip).limit(limit).lean(),
-      Mechanicmodel.countDocuments(),
-    ]).select("name");
+      Mechanicmodel.find(filter).skip(skip).limit(limit).lean(),
+      Mechanicmodel.countDocuments(filter),
+    ]);
 
     res.status(STATUS_CODE.SUCCESS).json({
       status: true,
-      message: "user fetched successfully",
+      message: "User fetched successfully",
       currentPage: page,
       totalUsers: total,
       totalPages: Math.ceil(total / limit),
@@ -321,13 +314,36 @@ const DeleteMechanic = async (req, res, next) => {
 const Mechanicowndata = async (req, res, next) => {
   try {
     let id = req.mechanic;
-
     let data = await Mechanicmodel.findById(id);
 
     return res.status(STATUS_CODE.SUCCESS).json({
       status: true,
       message: "data fetched successfully",
       data: data,
+    });
+  } catch (error) {
+    return next(new AppError(error.message, STATUS_CODE.SERVERERROR));
+  }
+};
+
+// Get Own Profile
+const GetMechOwnprofile = async (req, res, next) => {
+  try {
+    const mech = await Mechanicmodel.findById(req.mechanic).select(
+      "name email phone_number referral_code vehicle_type documents.profile_photo"
+    );
+
+    if (!mech) {
+      return res.status(STATUS_CODE.NOTFOUND).json({
+        status: false,
+        message: "Mechanic not found",
+      });
+    }
+
+    res.status(STATUS_CODE.SUCCESS).json({
+      status: true,
+      message: "Mechanic profile fetched successfully",
+      data: mech,
     });
   } catch (error) {
     return next(new AppError(error.message, STATUS_CODE.SERVERERROR));
@@ -343,4 +359,5 @@ module.exports = {
   Sendforverification,
   Checkapplication,
   Mechanicowndata,
+  GetMechOwnprofile,
 };

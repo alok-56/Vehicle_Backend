@@ -3,7 +3,7 @@ const Mechanicmodel = require("../models/mechanic.model");
 const APPLICATION_CONSTANT = require("../constant/application_constant");
 const { getIO } = require("../utilits/socket");
 
-const MAX_DISTANCE_KM = 10;
+const MAX_DISTANCE_KM = 20;
 const RESPONSE_TIMEOUT_MS = 15000;
 const MAX_RETRY_DURATION_MS = 2 * 60 * 1000;
 const MAX_ACTIVE_TIMERS = 500;
@@ -12,8 +12,10 @@ const bookingTimers = new Map();
 
 const startMechanicMatching = async (
   bookingId,
+  bookingdata,
   lat,
   lng,
+  vehicletype,
   radiusKm = 1,
   totalTimeElapsed = 0
 ) => {
@@ -21,25 +23,21 @@ const startMechanicMatching = async (
   if (!booking || booking.status !== APPLICATION_CONSTANT.PENDING) return;
 
   if (bookingTimers.size >= MAX_ACTIVE_TIMERS) {
-    console.warn(
-      "Active booking timers exceeded. Dropping booking:",
-      bookingId
-    );
     return getIO().to(booking.userid.toString()).emit("bookingFailed", {
       message: "System is currently busy. Please try again shortly.",
     });
   }
 
-  
   const mechanics = await Mechanicmodel.find({
     isAvailable: true,
+    vehicle_type: { $in: vehicletype },
     _id: { $nin: booking.triedMechanicIds },
-    location: {
-      $near: {
-        $geometry: { type: "Point", coordinates: [lng, lat] },
-        $maxDistance: radiusKm * 1000,
-      },
-    },
+    // location: {
+    //   $near: {
+    //     $geometry: { type: "Point", coordinates: [lng, lat] },
+    //     $maxDistance: radiusKm * 1000,
+    //   },
+    // },
   });
 
   if (!mechanics.length) {
@@ -59,18 +57,16 @@ const startMechanicMatching = async (
     }
   }
 
-  
   const mechanic = await selectBestMechanic(mechanics);
   booking.triedMechanicIds.push(mechanic._id);
   await booking.save();
-
 
   getIO().to(mechanic.socketId).emit("newBookingRequest", {
     bookingId: booking._id,
     userLocation: booking.userLocation.coordinates,
     problem: booking.problem,
+    bookingdata: bookingdata,
   });
-
 
   if (bookingTimers.has(bookingId)) {
     clearTimeout(bookingTimers.get(bookingId));
@@ -103,7 +99,7 @@ const startMechanicMatching = async (
 };
 
 const selectBestMechanic = async (mechanics) => {
-  let onlineMechanics = mechanics.filter((m) => m.socketId);
+  let onlineMechanics = mechanics.filter((m) => m.isAvailable);
 
   if (onlineMechanics.length === 0) {
     onlineMechanics = mechanics;

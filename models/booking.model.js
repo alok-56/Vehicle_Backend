@@ -4,7 +4,8 @@ const APPLICATION_CONSTANT = require("../constant/application_constant");
 const Bookingschema = new mongoose.Schema(
   {
     userid: {
-      type: String,
+      type: mongoose.Types.ObjectId,
+      ref: "user",
       required: true,
     },
     userLocation: {
@@ -13,7 +14,6 @@ const Bookingschema = new mongoose.Schema(
     },
     problem: {
       type: String,
-      required: true,
     },
     mechanicid: { type: mongoose.Types.ObjectId, ref: "mechanic" },
     bookingtype: {
@@ -22,8 +22,6 @@ const Bookingschema = new mongoose.Schema(
       enum: ["emergency", "services"],
     },
     service_date: Date,
-    service_start_time: String,
-    service_end_time: String,
     services: [
       {
         servicename: String,
@@ -73,8 +71,10 @@ const Bookingschema = new mongoose.Schema(
       platform_fee: Number,
       mechanic_charge: Number,
       service_cost: Number,
+      additional_service_cost: Number,
     },
     payment_details: {
+      discount: Number,
       totalamount: Number,
       paidamount: Number,
       dueamount: Number,
@@ -82,6 +82,16 @@ const Bookingschema = new mongoose.Schema(
     payment_type: {
       type: String,
       enum: [APPLICATION_CONSTANT.CASH, APPLICATION_CONSTANT.ONLINE],
+    },
+    reviewstar: {
+      type: Number,
+      default: 1,
+      min: 1,
+      max: 5,
+    },
+    slot: {
+      type: mongoose.Types.ObjectId,
+      ref: "slot",
     },
     userSocketId: String,
     mechanicSocketId: String,

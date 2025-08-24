@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const APPLICATION_CONSTANT = require("../../constant/application_constant");
 
 const Serviceschema = new mongoose.Schema(
   {

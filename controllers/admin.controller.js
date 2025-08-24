@@ -21,7 +21,7 @@ const CreateAdmin = async (req, res, next) => {
 
     let admin = await Adminmodel.create(req.body);
 
-    return res.statu(STATUS_CODE.SUCCESS).json({
+    return res.status(STATUS_CODE.SUCCESS).json({
       status: true,
       message: "Admin created successfully",
     });
@@ -46,9 +46,9 @@ const Adminlogin = async (req, res, next) => {
       );
     }
 
-    let token = await GenerateToken(admin._id);
+    let token = await GenerateToken(emailcheck._id);
 
-    return res.statu(STATUS_CODE.SUCCESS).json({
+    return res.status(STATUS_CODE.SUCCESS).json({
       status: true,
       message: "Admin Login successfully",
       token: token,
@@ -64,7 +64,7 @@ const GetAdminownprofile = async (req, res, next) => {
     let id = req.admin;
 
     let admin = await Adminmodel.findById(id);
-    return res.statu(STATUS_CODE.SUCCESS).json({
+    return res.status(STATUS_CODE.SUCCESS).json({
       status: true,
       message: "Admin fetched successfully",
       data: admin,

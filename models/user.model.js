@@ -19,16 +19,22 @@ const UserSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    vehicle_type: {
+    vehicle_type: [
+      {
+        type: String,
+        required: true,
+        enum: [
+          APPLICATION_CONSTANT.CAR,
+          APPLICATION_CONSTANT.BIKE,
+          APPLICATION_CONSTANT.BUS,
+          APPLICATION_CONSTANT.AUTO,
+          APPLICATION_CONSTANT.TRUCK,
+        ],
+      },
+    ],
+    vehicle_model: {
       type: String,
-      required: true,
-      enum: [
-        APPLICATION_CONSTANT.CAR,
-        APPLICATION_CONSTANT.BIKE,
-        APPLICATION_CONSTANT.BUS,
-        APPLICATION_CONSTANT.AUTO,
-        APPLICATION_CONSTANT.TRUCK,
-      ],
+      required: false,
     },
     wallet_amount: {
       type: Number,
@@ -40,6 +46,9 @@ const UserSchema = new mongoose.Schema(
       default: false,
     },
     device_token: {
+      type: String,
+    },
+    profilepicture: {
       type: String,
     },
     socketId: { type: String, default: null },

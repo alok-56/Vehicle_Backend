@@ -24,13 +24,16 @@ const CreateUser = async (req, res, next) => {
       }
 
       // otp generation
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const otp = Math.floor(1000 + Math.random() * 9000).toString();
       let otpcreation = await Otpmodel.create({
         otp: otp,
         email: email,
       });
 
       // send email
+      await SendEmail(email, "OTP", name, {
+        otp: otp,
+      });
 
       res.status(STATUS_CODE.SUCCESS).json({
         status: true,
@@ -39,21 +42,6 @@ const CreateUser = async (req, res, next) => {
     }
     // resister logic
     else {
-      // check vehicle
-      if (
-        ![
-          APPLICATION_CONSTANT.CAR,
-          APPLICATION_CONSTANT.BIKE,
-          APPLICATION_CONSTANT.BUS,
-          APPLICATION_CONSTANT.AUTO,
-          APPLICATION_CONSTANT.TRUCK,
-        ].includes(vehicle_type)
-      ) {
-        return next(
-          new AppError("vechile not matched", STATUS_CODE.VALIDATIONERROR)
-        );
-      }
-
       // check referral code
       if (referral_code) {
         let referraluser = await Usermodel.findOne({
@@ -80,7 +68,7 @@ const CreateUser = async (req, res, next) => {
       }
 
       // otp generation
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const otp = Math.floor(1000 + Math.random() * 9000).toString();
       let otpcreation = await Otpmodel.create({
         otp: otp,
         email: email,
@@ -112,7 +100,7 @@ const VerifyUser = async (req, res, next) => {
       type,
       otp,
       referral_code,
-      token,
+      brand,
     } = req.body;
     if (type === "login") {
       // user check
@@ -123,7 +111,7 @@ const VerifyUser = async (req, res, next) => {
 
       // otp check
       let fetchotp = await Otpmodel.findOne({ email: email, otp: otp });
-      if (fetchotp) {
+      if (!fetchotp) {
         return next(
           new AppError("Incorrect otp or expired", STATUS_CODE.VALIDATIONERROR)
         );
@@ -143,7 +131,8 @@ const VerifyUser = async (req, res, next) => {
     } else {
       // otp check
       let fetchotp = await Otpmodel.findOne({ email: email, otp: otp });
-      if (fetchotp) {
+
+      if (!fetchotp) {
         return next(new AppError("Incorrect otp", STATUS_CODE.VALIDATIONERROR));
       }
       const referaalcode = Math.floor(
@@ -154,15 +143,18 @@ const VerifyUser = async (req, res, next) => {
         name: name,
         email: email,
         phone_number: phone_number,
-        referral_code: referaalcode,
+        referral_code: referaalcode ? referaalcode : null,
         vehicle_type: vehicle_type,
+        vehicle_model: brand,
       });
 
-      // create referral
-      await Referralmodel.create({
-        userid: newuser._id,
-        refer_code: referral_code,
-      });
+      if (referral_code) {
+        // create referral
+        await Referralmodel.create({
+          userid: newuser._id,
+          refer_code: referral_code,
+        });
+      }
 
       // token generation
       let token = await GenerateToken(newuser._id);
@@ -176,6 +168,22 @@ const VerifyUser = async (req, res, next) => {
         token: token,
       });
     }
+  } catch (error) {
+    console.log(error);
+    return next(new AppError(error.message, STATUS_CODE.SERVERERROR));
+  }
+};
+
+// own profile
+const GetOwnprofile = async (req, res, next) => {
+  try {
+    const user = await Usermodel.findById(req.user);
+
+    res.status(STATUS_CODE.SUCCESS).json({
+      status: true,
+      message: "user fetched successfully",
+      data: user,
+    });
   } catch (error) {
     return next(new AppError(error.message, STATUS_CODE.SERVERERROR));
   }
@@ -250,10 +258,49 @@ const DeleteUser = async (req, res, next) => {
   }
 };
 
+// update Profile Image
+const UpdateProfile = async (req, res, next) => {
+  try {
+    const { name, phone_number, vehicle_type, vehicle_model, profilepicture } =
+      req.body;
+
+    let updateFields = {};
+
+    if (name) updateFields.name = name;
+    if (phone_number) updateFields.phone_number = phone_number;
+    if (vehicle_type) updateFields.vehicle_type = vehicle_type;
+    if (vehicle_model) updateFields.vehicle_model = vehicle_model;
+    if (profilepicture) {
+      updateFields.profilepicture = profilepicture;
+    }
+
+    const updatedUser = await Usermodel.findByIdAndUpdate(
+      req.user,
+      { $set: updateFields },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return next(new AppError("User not found", STATUS_CODE.NOTFOUND));
+    }
+
+    return res.status(STATUS_CODE.SUCCESS).json({
+      status: true,
+      message: "Profile updated successfully",
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.log(error);
+    return next(new AppError(error.message, STATUS_CODE.SERVERERROR));
+  }
+};
+
 module.exports = {
   CreateUser,
   VerifyUser,
   GetallUser,
   DeleteUser,
   blockuser,
+  GetOwnprofile,
+  UpdateProfile,
 };

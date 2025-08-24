@@ -4,12 +4,23 @@ const Masterschema = new mongoose.Schema(
   {
     charge_per_km: {
       type: Number,
+      default: 0,
     },
     platform_fee: {
       type: Number,
+      default: 0,
     },
     commision_percentage: {
       type: Number,
+      default: 0,
+    },
+    referral_bonus: {
+      type: Number,
+      default: 0,
+    },
+    discount_percentage: {
+      type: Number,
+      default: 0,
     },
   },
   { timestamps: true }

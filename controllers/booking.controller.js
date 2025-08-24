@@ -1,18 +1,25 @@
 const Bookingsmodel = require("../models/booking.model");
 const Mechanicmodel = require("../models/mechanic.model");
 const APPLICATION_CONSTANT = require("../constant/application_constant");
-const { getIO } = require("../utilits/socket");
 const startMechanicMatching = require("../utilits/mechnicfind");
 const STATUS_CODE = require("../constant/status_code");
 const AppError = require("../utilits/appError");
+const { getIO } = require("../utilits/socket");
+const Transactionmodel = require("../models/transaction.model");
 
 const createEmergencyBooking = async (req, res, next) => {
   try {
     const userid = req.user;
-    const { lat, lng, problem, payment_emerg_summary, payment_details } =
-      req.body;
+    const {
+      lat,
+      lng,
+      problem,
+      payment_emerg_summary,
+      payment_details,
+      vehicletype,
+    } = req.body;
 
-    const booking = await Bookingsmodel.create({
+    let booking = await Bookingsmodel.create({
       userid,
       userLocation: {
         type: "Point",
@@ -26,7 +33,12 @@ const createEmergencyBooking = async (req, res, next) => {
       triedMechanicIds: [],
     });
 
-    startMechanicMatching(booking._id, lat, lng);
+    booking = await Bookingsmodel.findById(booking._id).populate(
+      "userid",
+      "name phone_number"
+    );
+
+    startMechanicMatching(booking._id, booking, lat, lng, vehicletype);
 
     return res.status(STATUS_CODE.SUCCESS).json({
       status: true,
@@ -40,22 +52,53 @@ const createEmergencyBooking = async (req, res, next) => {
 
 const Findservicesmechnic = async (req, res, next) => {
   try {
-    let { lat, lng, radiusKm, vehicle_type } = req.body;
+    let {
+      lat = "any",
+      lng = "any",
+      radiusKm = "any",
+      vehicle_type,
+      date,
+      slot,
+    } = req.query;
 
-    const mechanics = await Mechanicmodel.find({
-      isAvailable: true,
-      vehicle_type: vehicle_type,
-      location: {
-        $near: {
-          $geometry: { type: "Point", coordinates: [lng, lat] },
-          $maxDistance: radiusKm * 1000,
-        },
+    const bookedMechanics = await Bookingsmodel.find({
+      service_date: new Date(date),
+      slot: slot,
+      status: {
+        $in: [
+          APPLICATION_CONSTANT.PENDING,
+          APPLICATION_CONSTANT.ACCEPTED,
+          APPLICATION_CONSTANT.ARRIVED,
+        ],
       },
-    });
+    }).distinct("mechanicid");
+
+    // Step 2: Build dynamic query
+    const query = {
+      vehicle_type: vehicle_type,
+      _id: { $nin: bookedMechanics },
+    };
+
+    const isLocationFilterEnabled =
+      lat !== "any" && lng !== "any" && radiusKm !== "any";
+
+    if (isLocationFilterEnabled) {
+      // const parsedLat = parseFloat(lat);
+      // const parsedLng = parseFloat(lng);
+      // const parsedRadius = parseFloat(radiusKm) * 1000;
+      // query.location = {
+      //   $near: {
+      //     $geometry: { type: "Point", coordinates: [parsedLng, parsedLat] },
+      //     $maxDistance: parsedRadius,
+      //   },
+      // };
+    }
+
+    const mechanics = await Mechanicmodel.find(query);
 
     return res.status(STATUS_CODE.SUCCESS).json({
       status: true,
-      message: "Mechanices fetched successfully",
+      message: "Available mechanics fetched successfully",
       data: mechanics,
     });
   } catch (error) {
@@ -69,25 +112,15 @@ const createserviceBooking = async (req, res, next) => {
     const {
       lat,
       lng,
-      problem,
       payment_ser_summary,
       payment_details,
       mechanicid,
       service_date,
-      service_start_time,
-      service_end_time,
       services,
+      slot,
     } = req.body;
 
-    if (
-      !mechanicid ||
-      !service_date ||
-      !service_start_time ||
-      !service_end_time ||
-      !lat ||
-      !lng ||
-      !services
-    ) {
+    if (!mechanicid || !service_date || !lat || !lng || !services || !slot) {
       return next(
         new AppError("Validation error", STATUS_CODE.VALIDATIONERROR)
       );
@@ -99,7 +132,6 @@ const createserviceBooking = async (req, res, next) => {
         type: "Point",
         coordinates: [lng, lat],
       },
-      problem,
       bookingtype: "services",
       status: APPLICATION_CONSTANT.PENDING,
       payment_ser_summary,
@@ -107,9 +139,8 @@ const createserviceBooking = async (req, res, next) => {
       triedMechanicIds: [],
       mechanicid,
       service_date,
-      service_start_time,
-      service_end_time,
       services,
+      slot,
     });
 
     return res.status(STATUS_CODE.SUCCESS).json({
@@ -124,17 +155,19 @@ const createserviceBooking = async (req, res, next) => {
 
 const respondToBooking = async (req, res, next) => {
   try {
-    let mechanicId = req.mechanic;
-    let userid = req.user;
-    const { bookingId, response, cancelreason } = req.body;
+    const mechanicId = req.user;
+    const { bookingId, response, cancelreason, paymentmethod } = req.body;
 
     const booking = await Bookingsmodel.findById(bookingId);
+    if (!booking) {
+      return next(new AppError("Booking not found", STATUS_CODE.NOTFOUND));
+    }
 
     if (response === "ACCEPT") {
-      if (!booking || booking.status !== APPLICATION_CONSTANT.PENDING) {
+      if (booking.status !== APPLICATION_CONSTANT.PENDING) {
         return next(
           new AppError(
-            "invalied or expired booking",
+            "Invalid or expired booking",
             STATUS_CODE.VALIDATIONERROR
           )
         );
@@ -144,8 +177,9 @@ const respondToBooking = async (req, res, next) => {
       booking.mechanicid = mechanicId;
       booking.triedMechanicIds = [];
       await booking.save();
+
       const mechanic = await Mechanicmodel.findById(mechanicId);
-      getIO.io.to(booking.userid.toString()).emit("bookingAccepted", {
+      getIO().to(booking.userid.toString()).emit("bookingAccepted", {
         bookingId,
         mechanicId,
         mechanicLocation: mechanic.location.coordinates,
@@ -157,22 +191,17 @@ const respondToBooking = async (req, res, next) => {
     }
 
     if (response === "MECHANICCANCEL") {
-      if (booking.status !== APPLICATION_CONSTANT.ACCEPTED) {
-        return next(
-          new AppError("Booking not accepted yet", STATUS_CODE.VALIDATIONERROR)
-        );
-      }
       booking.status = APPLICATION_CONSTANT.CANCELLED;
       await booking.save();
 
-      getIO.io.to(booking.userid.toString()).emit("bookingcancel", {
+      getIO().to(booking.userid.toString()).emit("bookingcancel", {
         bookingId,
         mechanicId,
       });
 
-      res.status(STATUS_CODE.SUCCESS).json({
+      return res.status(STATUS_CODE.SUCCESS).json({
         status: true,
-        message: "Booking cancel by mechanic",
+        message: "Booking cancelled by mechanic",
       });
     }
 
@@ -181,41 +210,66 @@ const respondToBooking = async (req, res, next) => {
       booking.cancelled_remarks = cancelreason;
       await booking.save();
 
-      getIO.io.to(mechanicId.toString()).emit("usercancel", {
+      getIO().to(mechanicId.toString()).emit("usercancel", {
         bookingId,
         mechanicId,
       });
 
-      res.status(STATUS_CODE.SUCCESS).json({
+      return res.status(STATUS_CODE.SUCCESS).json({
         status: true,
-        message: "Booking cancel by user",
+        message: "Booking cancelled by user",
       });
-    }
-
-    if (response === "GENERATELINK") {
-      //
-    }
-
-    if (response === "PAY") {
-    }
-
-    if (response === "TAKECASH") {
     }
 
     if (response === "BOOKINGCOMPLETED") {
+      const transactionStatus =
+        paymentmethod === APPLICATION_CONSTANT.CASH
+          ? APPLICATION_CONSTANT.PAID
+          : APPLICATION_CONSTANT.PENDING;
+
       booking.status = APPLICATION_CONSTANT.COMPLETED;
+      booking.payment_status = transactionStatus;
+
+      await Transactionmodel.create({
+        bookingId: booking._id,
+        userId: booking.userid,
+        mechnaicId: booking.mechanicid,
+        amount:
+          paymentmethod === "cash"
+            ? booking.payment_details?.totalamount
+            : booking.payment_details?.paidamount || 0,
+        paymentMethod: paymentmethod,
+        status: transactionStatus,
+        transactionId: "",
+        paymentDetails: {
+          totalAmount: booking.payment_details?.totalamount || 0,
+          discount: booking.payment_details?.discount || 0,
+          paidAmount:
+            paymentmethod === "cash"
+              ? booking.payment_details?.totalamount
+              : booking.payment_details?.paidamount || 0,
+          dueAmount:
+            paymentmethod === "cash"
+              ? 0
+              : booking.payment_details?.dueamount || 0,
+          method: paymentmethod,
+        },
+      });
+
       await booking.save();
 
-      getIO.io.to(booking.userid.toString()).emit("completed", {
+      getIO().to(booking.userid.toString()).emit("completed", {
         bookingId,
         mechanicId,
       });
 
-      res.status(STATUS_CODE.SUCCESS).json({
+      return res.status(STATUS_CODE.SUCCESS).json({
         status: true,
         message: "Booking completed",
       });
     }
+
+    return next(new AppError("Invalid response type", STATUS_CODE.BADREQUEST));
   } catch (err) {
     return next(new AppError(err.message, STATUS_CODE.SERVERERROR));
   }
@@ -224,12 +278,17 @@ const respondToBooking = async (req, res, next) => {
 const Addaditionalservice = async (req, res, next) => {
   try {
     let { id } = req.params;
-    let { additional_services, payment_emerg_summary, payment_details } =
-      req.body;
+    let {
+      additional_services,
+      payment_emerg_summary,
+      payment_details,
+      services,
+      payment_ser_summary,
+    } = req.body;
 
     let booking = await Bookingsmodel.findById(id);
-    if (!booking || booking.status === APPLICATION_CONSTANT.COMPLETED) {
-      return next(new AppError("Invailed booking or Booking is completed"));
+    if (!booking) {
+      return next(new AppError("Invailed booking"));
     }
 
     let updatedbooking = await Bookingsmodel.findByIdAndUpdate(id, req.body, {
@@ -285,7 +344,7 @@ const GetUserbooking = async (req, res, next) => {
     const skip = (page - 1) * limit;
 
     const query = { userid: userId };
-    if (status) {
+    if (status !== "all") {
       query.status = status;
     }
 
@@ -318,7 +377,7 @@ const GetMechnicbooking = async (req, res, next) => {
     const skip = (page - 1) * limit;
 
     const query = { mechanicid: mechanicId };
-    if (status) {
+    if (status !== "all") {
       query.status = status;
     }
 
@@ -327,10 +386,10 @@ const GetMechnicbooking = async (req, res, next) => {
         .skip(parseInt(skip))
         .limit(parseInt(limit))
         .sort({ createdAt: -1 })
-        .populate("userid", "name phone"),
+        .populate("userid", "name phone_number")
+        .populate("slot"),
       Bookingsmodel.countDocuments(query),
     ]);
-
     res.status(STATUS_CODE.SUCCESS).json({
       status: true,
       message: "Mechanic bookings fetched",
@@ -338,6 +397,119 @@ const GetMechnicbooking = async (req, res, next) => {
       currentPage: parseInt(page),
       totalPages: Math.ceil(total / limit),
       data: bookings,
+    });
+  } catch (error) {
+    return next(new AppError(error.message, STATUS_CODE.SERVERERROR));
+  }
+};
+
+const GetUserPayments = async (req, res, next) => {
+  try {
+    const userId = req.user;
+    const { status, page = 1, limit = 10 } = req.query;
+    const skip = (page - 1) * limit;
+
+    const query = { userId: userId };
+    if (status !== "all") {
+      query.status = status;
+    }
+
+    const [bookings, total] = await Promise.all([
+      Transactionmodel.find(query)
+        .select(
+          "status paymentDetails paymentMethod bookingId transactionId amount"
+        )
+        .skip(parseInt(skip))
+        .limit(parseInt(limit))
+        .sort({ createdAt: -1 }),
+      Transactionmodel.countDocuments(query),
+    ]);
+
+    res.status(STATUS_CODE.SUCCESS).json({
+      status: true,
+      message: "User payments fetched",
+      total,
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(total / limit),
+      data: bookings,
+    });
+  } catch (error) {
+    return next(new AppError(error.message, STATUS_CODE.SERVERERROR));
+  }
+};
+
+// get user active booking emergency
+const GetUseractivebooking = async (req, res, next) => {
+  try {
+    const userId = req.user;
+
+    const query = {
+      userid: userId,
+      status: "pending",
+    };
+
+    const [bookings, total] = await Promise.all([
+      Bookingsmodel.find(query)
+        .sort({ createdAt: -1 })
+        .populate("mechanicid", "name phone"),
+      Bookingsmodel.countDocuments(query),
+    ]);
+
+    res.status(STATUS_CODE.SUCCESS).json({
+      status: true,
+      message: "Pending user bookings fetched",
+      data: bookings,
+    });
+  } catch (error) {
+    return next(new AppError(error.message, STATUS_CODE.SERVERERROR));
+  }
+};
+
+// get mechnaic  active booking emergency
+const GetMechnicactivebooking = async (req, res, next) => {
+  try {
+    const mechanicId = req.mechanic;
+
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+
+    // Base query: accepted emergency bookings
+    const baseQuery = {
+      mechanicid: mechanicId,
+      bookingtype: "emergency",
+      status: APPLICATION_CONSTANT.ACCEPTED,
+    };
+
+    // Fetch all accepted emergency bookings (active ones)
+    const bookings = await Bookingsmodel.find(baseQuery)
+      .sort({ createdAt: -1 })
+      .populate("userid", "name phone_number")
+      .populate("slot");
+
+    // Today's bookings filter (created today)
+    const todayQuery = {
+      ...baseQuery,
+      createdAt: { $gte: startOfToday, $lte: endOfToday },
+    };
+
+    const todaysBookings = await Bookingsmodel.find(todayQuery);
+
+    // Calculate total earnings (sum of paidamount from payment_details)
+    const todaysEarnings = todaysBookings.reduce((sum, booking) => {
+      const paid = booking.payment_details?.paidamount || 0;
+      return sum + paid;
+    }, 0);
+
+    res.status(STATUS_CODE.SUCCESS).json({
+      status: true,
+      message: "Emergency accepted bookings fetched",
+      total: bookings.length,
+      data: bookings,
+      todayBookingCount: todaysBookings.length,
+      todayEarnings: todaysEarnings,
     });
   } catch (error) {
     return next(new AppError(error.message, STATUS_CODE.SERVERERROR));
@@ -353,4 +525,7 @@ module.exports = {
   GetAllbooking,
   GetUserbooking,
   GetMechnicbooking,
+  GetUserPayments,
+  GetMechnicactivebooking,
+  GetUseractivebooking,
 };

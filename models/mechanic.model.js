@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
 const APPLICATION_CONSTANT = require("../constant/application_constant");
-const STATUS_CODE = require("../constant/status_code");
 
 const MechanicSchema = new mongoose.Schema(
   {
@@ -13,21 +12,32 @@ const MechanicSchema = new mongoose.Schema(
     socketId: { type: String, default: null },
     isAvailable: { type: Boolean, default: false },
     location: {
-      type: { type: String, enum: ["Point"], default: "Point" },
-      coordinates: { type: [Number], default: [0, 0] },
-      index: "2dsphere",
+      type: {
+        type: String,
+        enum: ["Point"],
+        default: "Point",
+        required: true,
+      },
+      coordinates: {
+        type: [Number],
+        default: [0, 0],
+        required: true,
+      },
     },
-    vehicle_type: {
-      type: String,
-      required: true,
-      enum: [
-        APPLICATION_CONSTANT.CAR,
-        APPLICATION_CONSTANT.BIKE,
-        APPLICATION_CONSTANT.BUS,
-        APPLICATION_CONSTANT.AUTO,
-        APPLICATION_CONSTANT.TRUCK,
-      ],
-    },
+
+    vehicle_type: [
+      {
+        type: String,
+        required: true,
+        enum: [
+          APPLICATION_CONSTANT.CAR,
+          APPLICATION_CONSTANT.BIKE,
+          APPLICATION_CONSTANT.BUS,
+          APPLICATION_CONSTANT.AUTO,
+          APPLICATION_CONSTANT.TRUCK,
+        ],
+      },
+    ],
     documents: {
       adhar_card: { type: String },
       profile_photo: { type: String },
@@ -39,6 +49,7 @@ const MechanicSchema = new mongoose.Schema(
       long: { type: Number },
       experience: { type: Number },
       description: { type: String },
+      perHourPrice: { type: Number },
     },
     payment_details: {
       account_holder_name: { type: String },
@@ -49,7 +60,6 @@ const MechanicSchema = new mongoose.Schema(
       preferred_method: {
         type: String,
         enum: ["BANK", "UPI"],
-        default: "UPI",
       },
     },
     isBlocked: { type: Boolean, default: false },
@@ -66,6 +76,9 @@ const MechanicSchema = new mongoose.Schema(
         APPLICATION_CONSTANT.REJECTED,
       ],
       default: APPLICATION_CONSTANT.PENDING,
+    },
+    rating: {
+      type: Number,
     },
     device_token: {
       type: String,
