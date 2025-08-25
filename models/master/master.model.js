@@ -14,6 +14,10 @@ const Masterschema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    mechanic_charge: {
+      type: Number,
+      default: 0,
+    },
     referral_bonus: {
       type: Number,
       default: 0,

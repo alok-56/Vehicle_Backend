@@ -11,6 +11,8 @@ const createMaster = async (req, res, next) => {
       platform_fee,
       commision_percentage,
       referral_bonus,
+      mechanic_charge,
+      discount_percentage,
     } = req.body;
 
     const exist = await Mastermodel.findOne();
@@ -25,6 +27,8 @@ const createMaster = async (req, res, next) => {
       platform_fee,
       commision_percentage,
       referral_bonus,
+      mechanic_charge,
+      discount_percentage,
     });
 
     res.status(STATUS_CODE.SUCCESS).json({

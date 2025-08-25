@@ -119,6 +119,7 @@ const VerifyMechanic = async (req, res, next) => {
         status: true,
         message: "User logedin successfully",
         token: token,
+        isverified: user.status === "approve" ? true : false,
       });
     } else {
       // otp check
