@@ -445,7 +445,7 @@ const GetUseractivebooking = async (req, res, next) => {
 
     const query = {
       userid: userId,
-      status: { $in: ["pending", "accepted", "arrived"] },
+      status: { $in: ["pending", "accecpted", "arrived"] },
     };
 
     const [bookings, total] = await Promise.all([
