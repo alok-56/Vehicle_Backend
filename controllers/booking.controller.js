@@ -451,7 +451,7 @@ const GetUseractivebooking = async (req, res, next) => {
     const [bookings, total] = await Promise.all([
       Bookingsmodel.find(query)
         .sort({ createdAt: -1 })
-        .populate("mechanicid", "name phone documents"),
+        .populate("mechanicid", "name phone_number documents"),
       Bookingsmodel.countDocuments(query),
     ]);
 
