@@ -127,6 +127,7 @@ const VerifyUser = async (req, res, next) => {
         status: true,
         message: "User logedin successfully",
         token: token,
+         code:user.referral_code
       });
     } else {
       // otp check
@@ -166,6 +167,7 @@ const VerifyUser = async (req, res, next) => {
         status: true,
         message: "User logedin successfully",
         token: token,
+        code:referaalcode
       });
     }
   } catch (error) {

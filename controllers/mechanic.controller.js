@@ -120,6 +120,7 @@ const VerifyMechanic = async (req, res, next) => {
         message: "User logedin successfully",
         token: token,
         isverified: user.status === "approve" ? true : false,
+        code:user.referral_code
       });
     } else {
       // otp check
@@ -158,6 +159,7 @@ const VerifyMechanic = async (req, res, next) => {
         status: true,
         message: "User resister successfully",
         token: token,
+        code:referaalcode
       });
     }
   } catch (error) {
