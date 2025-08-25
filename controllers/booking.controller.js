@@ -445,19 +445,19 @@ const GetUseractivebooking = async (req, res, next) => {
 
     const query = {
       userid: userId,
-      status: "pending",
+      status: { $in: ["pending", "accepted", "arrived"] },
     };
 
     const [bookings, total] = await Promise.all([
       Bookingsmodel.find(query)
         .sort({ createdAt: -1 })
-        .populate("mechanicid", "name phone"),
+        .populate("mechanicid", "name phone documents"),
       Bookingsmodel.countDocuments(query),
     ]);
 
     res.status(STATUS_CODE.SUCCESS).json({
       status: true,
-      message: "Pending user bookings fetched",
+      message: "Active user bookings fetched",
       data: bookings,
     });
   } catch (error) {
