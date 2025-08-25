@@ -229,6 +229,8 @@ const respondToBooking = async (req, res, next) => {
 
       booking.status = APPLICATION_CONSTANT.COMPLETED;
       booking.payment_status = transactionStatus;
+      booking.payment_details.dueamount = 0;
+      booking.payment_details.paidamount = booking.payment_details.totalamount;
 
       await Transactionmodel.create({
         bookingId: booking._id,
