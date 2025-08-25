@@ -156,7 +156,8 @@ const createserviceBooking = async (req, res, next) => {
 const respondToBooking = async (req, res, next) => {
   try {
     const mechanicId = req.user;
-    const { bookingId, response, cancelreason, paymentmethod } = req.body;
+    const { bookingId, response, cancelreason, paymentmethod, noofkm, perkm } =
+      req.body;
 
     const booking = await Bookingsmodel.findById(bookingId);
     if (!booking) {
@@ -171,6 +172,11 @@ const respondToBooking = async (req, res, next) => {
             STATUS_CODE.VALIDATIONERROR
           )
         );
+      }
+
+      if (booking.bookingtype === "emergency") {
+        booking.totalamount = booking.totalamount + noofkm * perkm;
+        booking.dueamount = booking.totalamount + noofkm * perkm;
       }
 
       booking.status = APPLICATION_CONSTANT.ACCEPTED;
