@@ -58,6 +58,7 @@ const startMechanicMatching = async (
   }
 
   const mechanic = await selectBestMechanic(mechanics);
+  console.log(mechanic)
   booking.triedMechanicIds.push(mechanic._id);
   await booking.save();
 
