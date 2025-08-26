@@ -9,6 +9,7 @@ const {
   DeleteMechanic,
   Checkapplication,
   GetMechOwnprofile,
+  UpdateMechanicProfile,
 } = require("../controllers/mechanic.controller");
 const { Ismechanic } = require("../middleware/Ismechanic");
 const { Isadmin } = require("../middleware/Isadmin");
@@ -26,5 +27,6 @@ mechanicRouter.patch("/checkapplication", Isadmin, Checkapplication);
 mechanicRouter.patch("/blockmechnic/:id", Isadmin, blockMechanic);
 mechanicRouter.delete("/deletemechnic/:id", Isadmin, DeleteMechanic);
 mechanicRouter.get("/ownprofile", Ismechanic, GetMechOwnprofile);
+mechanicRouter.patch("/update", Ismechanic, UpdateMechanicProfile);
 
 module.exports = mechanicRouter;

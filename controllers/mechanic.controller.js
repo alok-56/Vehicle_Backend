@@ -354,6 +354,53 @@ const GetMechOwnprofile = async (req, res, next) => {
 };
 
 // Update profile data
+const UpdateMechanicProfile = async (req, res, next) => {
+  try {
+    const {
+      name,
+      phone_number,
+      vehicle_type,
+      profile_photo,
+      shop_name,
+      experience,
+      description,
+      perHourPrice,
+    } = req.body;
+
+    let updateFields = {};
+
+    if (name) updateFields.name = name;
+    if (phone_number) updateFields.phone_number = phone_number;
+    if (vehicle_type) updateFields.vehicle_type = vehicle_type;
+    if (profile_photo) updateFields["documents.profile_photo"] = profile_photo;
+
+    if (!updateFields.shop_details) updateFields.shop_details = {};
+    if (shop_name) updateFields["shop_details.shop_name"] = shop_name;
+    if (experience) updateFields["shop_details.experience"] = experience;
+    if (description) updateFields["shop_details.description"] = description;
+    if (perHourPrice) updateFields["shop_details.perHourPrice"] = perHourPrice;
+
+    // Update user by ID (assuming req.user contains the user id)
+    const updatedMechanic = await Usermodel.findByIdAndUpdate(
+      req.mechanic,
+      { $set: updateFields },
+      { new: true }
+    );
+
+    if (!updatedMechanic) {
+      return next(new AppError("Mechanic not found", STATUS_CODE.NOTFOUND));
+    }
+
+    return res.status(STATUS_CODE.SUCCESS).json({
+      status: true,
+      message: "Mechanic profile updated successfully",
+      user: updatedMechanic,
+    });
+  } catch (error) {
+    console.error(error);
+    return next(new AppError(error.message, STATUS_CODE.SERVERERROR));
+  }
+};
 
 module.exports = {
   CreateMechanic,
@@ -365,4 +412,5 @@ module.exports = {
   Checkapplication,
   Mechanicowndata,
   GetMechOwnprofile,
+  UpdateMechanicProfile
 };
