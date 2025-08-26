@@ -381,7 +381,7 @@ const UpdateMechanicProfile = async (req, res, next) => {
     if (perHourPrice) updateFields["shop_details.perHourPrice"] = perHourPrice;
 
     // Update user by ID (assuming req.user contains the user id)
-    const updatedMechanic = await Usermodel.findByIdAndUpdate(
+    const updatedMechanic = await Mechanicmodel.findByIdAndUpdate(
       req.mechanic,
       { $set: updateFields },
       { new: true }
