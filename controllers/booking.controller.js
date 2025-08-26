@@ -544,7 +544,7 @@ const GetAllmyEarning = async (req, res, next) => {
     const { month, year } = req.query;
     let dateFilter = {};
 
-    if (month && year) {
+    if (month && year && month !== "all" && year !== "all") {
       const startDate = new Date(year, month - 1, 1);
       const endDate = new Date(year, month, 1);
       dateFilter.transactionDate = { $gte: startDate, $lt: endDate };
