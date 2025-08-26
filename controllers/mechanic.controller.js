@@ -372,15 +372,20 @@ const UpdateMechanicProfile = async (req, res, next) => {
     if (name) updateFields.name = name;
     if (phone_number) updateFields.phone_number = phone_number;
     if (vehicle_type) updateFields.vehicle_type = vehicle_type;
-    if (profile_photo) updateFields["documents.profile_photo"] = profile_photo;
+    if (profile_photo) {
+      updateFields.documents = { profile_photo };
+    }
 
-    if (!updateFields.shop_details) updateFields.shop_details = {};
-    if (shop_name) updateFields["shop_details.shop_name"] = shop_name;
-    if (experience) updateFields["shop_details.experience"] = experience;
-    if (description) updateFields["shop_details.description"] = description;
-    if (perHourPrice) updateFields["shop_details.perHourPrice"] = perHourPrice;
+    // Create shop_details only if any shop field exists
+    if (shop_name || experience || description || perHourPrice) {
+      updateFields.shop_details = {};
+      if (shop_name) updateFields.shop_details.shop_name = shop_name;
+      if (experience) updateFields.shop_details.experience = experience;
+      if (description) updateFields.shop_details.description = description;
+      if (perHourPrice) updateFields.shop_details.perHourPrice = perHourPrice;
+    }
 
-    // Update user by ID (assuming req.user contains the user id)
+    // Update mechanic
     const updatedMechanic = await Mechanicmodel.findByIdAndUpdate(
       req.mechanic,
       { $set: updateFields },
@@ -412,5 +417,5 @@ module.exports = {
   Checkapplication,
   Mechanicowndata,
   GetMechOwnprofile,
-  UpdateMechanicProfile
+  UpdateMechanicProfile,
 };
