@@ -7,6 +7,7 @@ const AppError = require("../utilits/appError");
 const { getIO } = require("../utilits/socket");
 const Transactionmodel = require("../models/transaction.model");
 const Mastermodel = require("../models/master/master.model");
+const { default: mongoose } = require("mongoose");
 
 const createEmergencyBooking = async (req, res, next) => {
   try {
@@ -280,6 +281,9 @@ const respondToBooking = async (req, res, next) => {
         status: true,
         message: "Booking completed",
       });
+    }
+
+    if (response === "pay") {
     }
 
     return next(new AppError("Invalid response type", STATUS_CODE.BADREQUEST));
@@ -768,6 +772,35 @@ const mechanicwiseEarning = async (req, res, next) => {
 
 const Paypayout = async (req, res, next) => {
   try {
+    let { mechanicid, transaction_id, amount, paymentmethod } = req.body;
+
+    // Generate random ObjectIds for bookingId and userId
+    const bookingId = new mongoose.Types.ObjectId();
+    const userId = new mongoose.Types.ObjectId();
+
+    let createpayout = await Transactionmodel.create({
+      bookingId,
+      userId,
+      mechnaicId: mechanicid,
+      amount: amount,
+      paymentMethod: paymentmethod,
+      status: "paid",
+      transactionId: transaction_id,
+      paymentDetails: {
+        totalAmount: 0,
+        discount: 0,
+        paidAmount: 0,
+        dueAmount: 0,
+        method: paymentmethod,
+      },
+      type: "payout",
+    });
+
+    return res.status(200).json({
+      status: true,
+      code: 200,
+      data: createpayout,
+    });
   } catch (error) {
     return next(new AppError(error.message, STATUS_CODE.SERVERERROR));
   }
@@ -787,4 +820,5 @@ module.exports = {
   GetUseractivebooking,
   GetAllmyEarning,
   mechanicwiseEarning,
+  Paypayout,
 };

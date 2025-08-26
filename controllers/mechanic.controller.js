@@ -120,7 +120,7 @@ const VerifyMechanic = async (req, res, next) => {
         message: "User logedin successfully",
         token: token,
         isverified: user.status === "approve" ? true : false,
-        code:user.referral_code
+        code: user.referral_code,
       });
     } else {
       // otp check
@@ -159,7 +159,7 @@ const VerifyMechanic = async (req, res, next) => {
         status: true,
         message: "User resister successfully",
         token: token,
-        code:referaalcode
+        code: referaalcode,
       });
     }
   } catch (error) {
@@ -333,7 +333,7 @@ const Mechanicowndata = async (req, res, next) => {
 const GetMechOwnprofile = async (req, res, next) => {
   try {
     const mech = await Mechanicmodel.findById(req.mechanic).select(
-      "name email phone_number referral_code vehicle_type documents.profile_photo"
+      "name email phone_number referral_code vehicle_type documents.profile_photo shop_details"
     );
 
     if (!mech) {
@@ -352,6 +352,8 @@ const GetMechOwnprofile = async (req, res, next) => {
     return next(new AppError(error.message, STATUS_CODE.SERVERERROR));
   }
 };
+
+// Update profile data
 
 module.exports = {
   CreateMechanic,
