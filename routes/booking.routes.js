@@ -13,6 +13,7 @@ const {
   GetUserPayments,
   GetUseractivebooking,
   GetMechnicactivebooking,
+  GetAllmyEarning,
 } = require("../controllers/booking.controller");
 const { Isuserormechanic } = require("../middleware/Isuserormechanic");
 const { Ismechanic } = require("../middleware/Ismechanic");
@@ -36,6 +37,11 @@ bookingRouter.get(
   "/active/mechnaic/booking",
   Ismechanic,
   GetMechnicactivebooking
+);
+bookingRouter.get(
+  "/earning",
+  Ismechanic,
+  GetAllmyEarning
 );
 
 module.exports = bookingRouter;

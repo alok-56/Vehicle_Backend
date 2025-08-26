@@ -527,6 +527,121 @@ const GetMechnicactivebooking = async (req, res, next) => {
   }
 };
 
+const GetAllmyEarning = async (req, res, next) => {
+  try {
+    // Get commission and platform fee from master settings
+    const commissionData = await Mastermodel.findOne();
+    const commissionPercentage = commissionData?.commision_percentage || 0;
+    const platformFee = commissionData?.platform_fee || 0;
+
+    // Get mechanic ID from request (assumed set in auth middleware)
+    const mechanicId = req.mechanic;
+    if (!mechanicId) {
+      return next(
+        new AppError("Mechanic ID is missing", STATUS_CODE.BADREQUEST)
+      );
+    }
+
+    // Optional month/year filter
+    const { month, year } = req.query;
+    let dateFilter = {};
+
+    if (month && year) {
+      const startDate = new Date(year, month - 1, 1);
+      const endDate = new Date(year, month, 1);
+      dateFilter.transactionDate = { $gte: startDate, $lt: endDate };
+    }
+
+    // Fetch paid transactions for the mechanic with optional date filter
+    const transactions = await Transactionmodel.find({
+      mechnaicId: mechanicId,
+      status: "paid",
+      ...dateFilter,
+    });
+
+    // Totals
+    let totalNetEarning = 0;
+    let totalPayout = 0;
+    let totalCashCommission = 0;
+
+    // Lists
+    const earnings = [];
+    const payouts = [];
+
+    // Process each transaction
+    transactions.forEach((transaction) => {
+      const { paymentDetails = {}, type, paymentMethod } = transaction;
+      const totalAmount = paymentDetails.totalAmount || 0;
+      const discount = paymentDetails.discount || 0;
+
+      if (type === "payment") {
+        // Step 1: Calculate mechanic’s gross (excluding platform fee)
+        const grossBeforeFee = totalAmount + discount;
+        const mechanicGross = grossBeforeFee - platformFee;
+
+        // Step 2: Commission
+        const commission = (mechanicGross * commissionPercentage) / 100;
+        const netEarning = mechanicGross - commission;
+
+        if (paymentMethod === "cash") {
+          // Mechanic already has cash, but owes commission
+          totalCashCommission += commission;
+        } else {
+          // Online: platform already collected, so this is actual net earning
+          totalNetEarning += netEarning;
+        }
+
+        earnings.push({
+          transactionId: transaction._id,
+          bookingId: transaction.bookingId,
+          transactionDate: transaction.transactionDate,
+          paymentMethod,
+          grossEarning: mechanicGross,
+          commission,
+          platformFee,
+          netEarning: paymentMethod === "cash" ? mechanicGross : netEarning,
+          commissionPending: paymentMethod === "cash" ? commission : 0,
+        });
+      } else if (type === "payout") {
+        const payoutAmount = transaction.amount || 0;
+        totalPayout += payoutAmount;
+
+        payouts.push({
+          transactionId: transaction._id,
+          payoutDate: transaction.transactionDate,
+          amount: payoutAmount,
+        });
+      }
+    });
+
+    // Final net balance: earnings - payouts - unpaid cash commissions
+    const netBalance = totalNetEarning - totalPayout - totalCashCommission;
+
+    // Send response
+    return res.status(200).json({
+      success: true,
+      mechanicId,
+      month: month ? parseInt(month) : "all",
+      year: year ? parseInt(year) : "all",
+      totalNetEarning,
+      totalPayout,
+      totalCashCommission,
+      netBalance,
+      earnings,
+      payouts,
+    });
+  } catch (error) {
+    return next(new AppError(error.message, STATUS_CODE.SERVERERROR));
+  }
+};
+
+const Paypayout = async (req, res, next) => {
+  try {
+  } catch (error) {
+    return next(new AppError(error.message, STATUS_CODE.SERVERERROR));
+  }
+};
+
 module.exports = {
   createEmergencyBooking,
   respondToBooking,
@@ -539,4 +654,5 @@ module.exports = {
   GetUserPayments,
   GetMechnicactivebooking,
   GetUseractivebooking,
+  GetAllmyEarning,
 };

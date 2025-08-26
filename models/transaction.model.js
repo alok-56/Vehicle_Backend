@@ -48,6 +48,11 @@ const Transactionschema = new mongoose.Schema(
       type: Object,
       required: true,
     },
+    type: {
+      type: String,
+      default: "payment",
+      enum: ["payment", "payout"],
+    },
   },
   { timestamps: true }
 );
