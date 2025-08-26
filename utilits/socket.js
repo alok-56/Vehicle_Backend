@@ -30,10 +30,10 @@ const initSocket = (server) => {
 
     socket.on("updateAvailability", async ({ userId, isAvailable }) => {
       try {
-       let res=await Mechanicmodel.findByIdAndUpdate(userId, {
+        let res = await Mechanicmodel.findByIdAndUpdate(userId, {
           isAvailable: isAvailable,
         });
-        
+
         socket.emit("availabilityUpdated", {
           success: true,
           isAvailable: isAvailable,

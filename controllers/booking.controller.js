@@ -6,6 +6,7 @@ const STATUS_CODE = require("../constant/status_code");
 const AppError = require("../utilits/appError");
 const { getIO } = require("../utilits/socket");
 const Transactionmodel = require("../models/transaction.model");
+const Mastermodel = require("../models/master/master.model");
 
 const createEmergencyBooking = async (req, res, next) => {
   try {
@@ -77,6 +78,7 @@ const Findservicesmechnic = async (req, res, next) => {
     const query = {
       vehicle_type: vehicle_type,
       _id: { $nin: bookedMechanics },
+      status: APPLICATION_CONSTANT.APPROVE,
     };
 
     const isLocationFilterEnabled =
@@ -156,7 +158,7 @@ const createserviceBooking = async (req, res, next) => {
 const respondToBooking = async (req, res, next) => {
   try {
     const mechanicId = req.user;
-    const { bookingId, response, cancelreason, paymentmethod, noofkm, perkm } =
+    const { bookingId, response, cancelreason, paymentmethod, noofkm } =
       req.body;
 
     const booking = await Bookingsmodel.findById(bookingId);
@@ -173,10 +175,13 @@ const respondToBooking = async (req, res, next) => {
           )
         );
       }
+      let perkm = await Mastermodel.find();
 
       if (booking.bookingtype === "emergency") {
-        booking.totalamount = booking.totalamount + noofkm * perkm;
-        booking.dueamount = booking.totalamount + noofkm * perkm;
+        booking.totalamount =
+          booking.totalamount + noofkm * perkm[0]?.charge_per_km;
+        booking.dueamount =
+          booking.totalamount + noofkm * perkm[0]?.charge_per_km;
       }
 
       booking.status = APPLICATION_CONSTANT.ACCEPTED;
@@ -446,7 +451,6 @@ const GetUserPayments = async (req, res, next) => {
   }
 };
 
-// get user active booking emergency
 const GetUseractivebooking = async (req, res, next) => {
   try {
     const userId = req.user;
@@ -473,7 +477,6 @@ const GetUseractivebooking = async (req, res, next) => {
   }
 };
 
-// get mechnaic  active booking emergency
 const GetMechnicactivebooking = async (req, res, next) => {
   try {
     const mechanicId = req.mechanic;

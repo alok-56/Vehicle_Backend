@@ -14,6 +14,11 @@ const Adminschma = new mongoose.Schema(
       type: String,
       required: true,
     },
+    new:{
+      type:Number,
+      required:false,
+      unique:false
+    }
   },
   { timestamps: true }
 );
