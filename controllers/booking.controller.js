@@ -8,6 +8,7 @@ const { getIO } = require("../utilits/socket");
 const Transactionmodel = require("../models/transaction.model");
 const Mastermodel = require("../models/master/master.model");
 const { default: mongoose } = require("mongoose");
+const { sendNotifications } = require("../utilits/firebase");
 
 const createEmergencyBooking = async (req, res, next) => {
   try {
@@ -146,10 +147,27 @@ const createserviceBooking = async (req, res, next) => {
       slot,
     });
 
-    return res.status(STATUS_CODE.SUCCESS).json({
+    res.status(STATUS_CODE.SUCCESS).json({
       status: true,
       message: "Booking created successfully",
       data: booking,
+    });
+
+    setImmediate(async () => {
+      try {
+        const mechanic = await Mechanicmodel.findById(mechanicid);
+        if (mechanic && mechanic.device_token && mechanic.device_token.length) {
+          const message = `You have a new service booking of amount ${payment_details?.totalamount}`;
+          await sendNotifications(
+            mechanic.device_token,
+            message,
+            "booking",
+            true
+          );
+        }
+      } catch (notifError) {
+        console.error("Error sending notification:", notifError);
+      }
     });
   } catch (error) {
     return next(new AppError(error.message, STATUS_CODE.SERVERERROR));

@@ -11,9 +11,14 @@ const NotificationSchema = new mongoose.Schema(
       enum: ["system", "booking", "payment", "alert"],
       default: "system",
     },
+    token: {
+      type: [],
+    },
   },
   { timestamps: true }
 );
+
+NotificationSchema.index({ createdAt: 1 }, { expireAfterSeconds: 86400 });
 
 const notificationmodel = mongoose.model("Notification", NotificationSchema);
 module.exports = notificationmodel;

@@ -92,8 +92,16 @@ const CreateMechanic = async (req, res, next) => {
 // verify user
 const VerifyMechanic = async (req, res, next) => {
   try {
-    let { name, email, phone_number, vehicle_type, type, otp, referral_code } =
-      req.body;
+    let {
+      name,
+      email,
+      phone_number,
+      vehicle_type,
+      type,
+      otp,
+      referral_code,
+      device_token,
+    } = req.body;
     if (type === "login") {
       // user check
       let user = await Mechanicmodel.findOne({ email: email });
@@ -111,6 +119,10 @@ const VerifyMechanic = async (req, res, next) => {
 
       // token generation
       let token = await GenerateToken(user._id);
+
+      await Mechanicmodel.findByIdAndUpdate(user._id, {
+        device_token: device_token,
+      });
 
       // delete otp
       await Otpmodel.findByIdAndDelete(fetchotp._id);
@@ -139,6 +151,7 @@ const VerifyMechanic = async (req, res, next) => {
         referral_code: referaalcode,
         vehicle_type: vehicle_type,
         isemailverified: true,
+        device_token: device_token,
       });
 
       // create referral

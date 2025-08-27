@@ -101,6 +101,7 @@ const VerifyUser = async (req, res, next) => {
       otp,
       referral_code,
       brand,
+      device_token,
     } = req.body;
     if (type === "login") {
       // user check
@@ -119,7 +120,9 @@ const VerifyUser = async (req, res, next) => {
 
       // token generation
       let token = await GenerateToken(user._id);
-
+      await Usermodel.findByIdAndUpdate(user._id, {
+        device_token: device_token
+      });
       // delete otp
       await Otpmodel.findByIdAndDelete(fetchotp._id);
 
@@ -127,7 +130,7 @@ const VerifyUser = async (req, res, next) => {
         status: true,
         message: "User logedin successfully",
         token: token,
-         code:user.referral_code
+        code: user.referral_code,
       });
     } else {
       // otp check
@@ -147,10 +150,10 @@ const VerifyUser = async (req, res, next) => {
         referral_code: referaalcode ? referaalcode : null,
         vehicle_type: vehicle_type,
         vehicle_model: brand,
+        device_token: device_token
       });
 
       if (referral_code) {
-        // create referral
         await Referralmodel.create({
           userid: newuser._id,
           refer_code: referral_code,
@@ -167,7 +170,7 @@ const VerifyUser = async (req, res, next) => {
         status: true,
         message: "User logedin successfully",
         token: token,
-        code:referaalcode
+        code: referaalcode,
       });
     }
   } catch (error) {
