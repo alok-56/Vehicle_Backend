@@ -4,6 +4,7 @@ const {
   CreateNotification,
   GetAllNotifications,
   DeleteNotification,
+  GetMyNotification,
 } = require("../controllers/notification.controller");
 const { Isuserormechanic } = require("../middleware/Isuserormechanic");
 
@@ -16,7 +17,7 @@ notificationRouter.delete("/delete/:id", Isadmin, DeleteNotification);
 notificationRouter.post(
   "/get/mynotification",
   Isuserormechanic,
-  DeleteNotification
+  GetMyNotification
 );
 
 module.exports = notificationRouter;
