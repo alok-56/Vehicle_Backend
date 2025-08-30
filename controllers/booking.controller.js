@@ -180,7 +180,7 @@ const createserviceBooking = async (req, res, next) => {
 const respondToBooking = async (req, res, next) => {
   try {
     const mechanicId = req.user;
-    const { bookingId, response, cancelreason, paymentmethod, noofkm } =
+    const { bookingId, response, cancelreason, paymentmethod, noofkm=0 } =
       req.body;
 
     const booking = await Bookingsmodel.findById(bookingId);
@@ -188,7 +188,7 @@ const respondToBooking = async (req, res, next) => {
       return next(new AppError("Booking not found", STATUS_CODE.NOTFOUND));
     }
 
-      console.log(booking);
+    console.log(booking);
     if (response === "ACCEPT") {
       if (booking.status !== APPLICATION_CONSTANT.PENDING) {
         return next(
@@ -198,14 +198,13 @@ const respondToBooking = async (req, res, next) => {
           )
         );
       }
-  console.log(booking);
-      let perkm = await Mastermodel.find();
       console.log(booking);
+      let perkm = await Mastermodel.find();
+      console.log(booking,perkm[0]?.charge_per_km,noofkm);
       if (booking.bookingtype === "emergency") {
-        booking.totalamount =
-          booking.totalamount + noofkm * perkm[0]?.charge_per_km;
-        booking.dueamount =
-          booking.totalamount + noofkm * perkm[0]?.charge_per_km;
+        const perKmCharge = noofkm * (perkm[0]?.charge_per_km || 0);
+        booking.totalamount = booking.totalamount + perKmCharge;
+        booking.dueamount = booking.dueamount + perKmCharge;
       }
 
       booking.status = APPLICATION_CONSTANT.ACCEPTED;
