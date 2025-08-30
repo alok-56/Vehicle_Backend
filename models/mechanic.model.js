@@ -100,5 +100,7 @@ const MechanicSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+MechanicSchema.index({ location: "2dsphere" });
+
 const Mechanicmodel = mongoose.model("mechanic", MechanicSchema);
 module.exports = Mechanicmodel;

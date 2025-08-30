@@ -77,7 +77,6 @@ const Findservicesmechnic = async (req, res, next) => {
       },
     }).distinct("mechanicid");
 
-    // Step 2: Build dynamic query
     const query = {
       vehicle_type: vehicle_type,
       _id: { $nin: bookedMechanics },
@@ -92,9 +91,13 @@ const Findservicesmechnic = async (req, res, next) => {
       // const parsedLat = parseFloat(lat);
       // const parsedLng = parseFloat(lng);
       // const parsedRadius = parseFloat(radiusKm) * 1000;
+
       // query.location = {
       //   $near: {
-      //     $geometry: { type: "Point", coordinates: [parsedLng, parsedLat] },
+      //     $geometry: {
+      //       type: "Point",
+      //       coordinates: [parsedLng, parsedLat],
+      //     },
       //     $maxDistance: parsedRadius,
       //   },
       // };
