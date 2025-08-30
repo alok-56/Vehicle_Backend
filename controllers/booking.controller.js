@@ -91,7 +91,6 @@ const Findservicesmechnic = async (req, res, next) => {
       // const parsedLat = parseFloat(lat);
       // const parsedLng = parseFloat(lng);
       // const parsedRadius = parseFloat(radiusKm) * 1000;
-
       // query.location = {
       //   $near: {
       //     $geometry: {
@@ -104,7 +103,6 @@ const Findservicesmechnic = async (req, res, next) => {
     }
 
     const mechanics = await Mechanicmodel.find(query);
-
     return res.status(STATUS_CODE.SUCCESS).json({
       status: true,
       message: "Available mechanics fetched successfully",
@@ -190,6 +188,7 @@ const respondToBooking = async (req, res, next) => {
       return next(new AppError("Booking not found", STATUS_CODE.NOTFOUND));
     }
 
+      console.log(booking);
     if (response === "ACCEPT") {
       if (booking.status !== APPLICATION_CONSTANT.PENDING) {
         return next(
@@ -199,9 +198,9 @@ const respondToBooking = async (req, res, next) => {
           )
         );
       }
-
+  console.log(booking);
       let perkm = await Mastermodel.find();
-      console.log(booking.bookingtype, noofkm, perkm[0].charge_per_km);
+      console.log(booking);
       if (booking.bookingtype === "emergency") {
         booking.totalamount =
           booking.totalamount + noofkm * perkm[0]?.charge_per_km;
