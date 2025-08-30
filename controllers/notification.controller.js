@@ -69,6 +69,9 @@ const CreateNotification = async (req, res, next) => {
       );
     }
 
+    // Remove duplicate tokens from the array
+    deviceTokens = [...new Set(deviceTokens)];
+
     // If there are valid device tokens, send the notifications
     if (deviceTokens.length > 0) {
       const formattedData = {
@@ -153,7 +156,7 @@ const DeleteNotification = async (req, res, next) => {
 };
 
 // Get MyNotification
-const GetMyNotification = async (req,res,next) => {
+const GetMyNotification = async (req, res, next) => {
   try {
     let { token } = req.body;
     const [notifications] = await NotificationModel.find({

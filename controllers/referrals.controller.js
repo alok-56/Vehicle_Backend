@@ -21,10 +21,10 @@ const GetAllMyreferral = async (req, res, next) => {
     const populatedReferrals = await Promise.all(
       referrals.map(async (ref) => {
         let user = await Usermodel.findById(ref.userid).select(
-          "name email phone_number"
+          "name email phone_number profilepicture"
         );
         let mechanic = await Mechanicmodel.findById(ref.userid).select(
-          "name email phone_number"
+          "name email phone_number documents.profile_photo"
         );
 
         return {
