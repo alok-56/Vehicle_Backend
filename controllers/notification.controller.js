@@ -153,18 +153,16 @@ const DeleteNotification = async (req, res, next) => {
 };
 
 // Get MyNotification
-const GetMyNotification = async () => {
+const GetMyNotification = async (req,res,next) => {
   try {
     let { token } = req.body;
+    const [notifications] = await NotificationModel.find({
+      device_token: { $in: token },
+      type: "all",
+    })
+      .sort({ createdAt: -1 })
+      .lean();
 
-    const [notifications] = await Promise.all([
-      NotificationModel.find({
-        device_token: { $in: token },
-        type: "all",
-      })
-        .sort({ createdAt: -1 })
-        .lean(),
-    ]);
     return res.status(STATUS_CODE.SUCCESS).json({
       status: true,
       message: "Notifications fetched successfully",
