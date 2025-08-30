@@ -22,6 +22,10 @@ const Masterschema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    Loyality_points: {
+      type: Number,
+      default: 0,
+    },
     discount_percentage: {
       type: Number,
       default: 0,

@@ -62,6 +62,7 @@ const Findservicesmechnic = async (req, res, next) => {
       vehicle_type,
       date,
       slot,
+      expert,
     } = req.query;
 
     const bookedMechanics = await Bookingsmodel.find({
@@ -81,6 +82,7 @@ const Findservicesmechnic = async (req, res, next) => {
       vehicle_type: vehicle_type,
       _id: { $nin: bookedMechanics },
       status: APPLICATION_CONSTANT.APPROVE,
+      isexpert: expert,
     };
 
     const isLocationFilterEnabled =

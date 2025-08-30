@@ -11,6 +11,10 @@ const MechanicSchema = new mongoose.Schema(
     referral_code: { type: Number, required: true },
     socketId: { type: String, default: null },
     isAvailable: { type: Boolean, default: false },
+    wallet_amount: {
+      type: Number,
+      default: 0,
+    },
     location: {
       type: {
         type: String,
