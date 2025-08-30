@@ -8,11 +8,10 @@ const NotificationSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["system", "booking", "payment", "alert"],
-      default: "system",
     },
-    token: {
-      type: [],
+    device_token: {
+      type: [String],
+      default: [],
     },
   },
   { timestamps: true }

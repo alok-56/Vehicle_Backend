@@ -193,7 +193,7 @@ const DeleteServicePart = async (req, res, next) => {
 // create Sos service
 const CreateSosservice = async (req, res, next) => {
   try {
-    let { servicename, image, vehicle_type } = req.body;
+    let { servicename, image, vehicle_type, price } = req.body;
     if (
       ![
         APPLICATION_CONSTANT.CAR,
@@ -223,7 +223,7 @@ const CreateSosservice = async (req, res, next) => {
 // update service
 const UpdateSosservice = async (req, res, next) => {
   try {
-    let { servicename, image, vehicle_type, id } = req.body;
+    let { servicename, image, vehicle_type, id, price } = req.body;
     if (vehicle_type) {
       if (
         ![
@@ -243,7 +243,8 @@ const UpdateSosservice = async (req, res, next) => {
     const update = {};
     if (servicename) update.servicename = servicename;
     if (image) update.image = image;
-    if (vehicle_type) update.vehicle_type;
+    if (vehicle_type) update.vehicle_type=vehicle_type
+    if (price) update.price = price;
 
     let service = await SosServicemodel.findByIdAndUpdate(id, req.body, {
       new: true,

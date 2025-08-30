@@ -47,6 +47,7 @@ const MechanicSchema = new mongoose.Schema(
       shop_name: { type: String },
       lat: { type: Number },
       long: { type: Number },
+      pincode: { type: Number },
       experience: { type: Number },
       description: { type: String },
       perHourPrice: { type: Number },
@@ -76,6 +77,14 @@ const MechanicSchema = new mongoose.Schema(
         APPLICATION_CONSTANT.REJECTED,
       ],
       default: APPLICATION_CONSTANT.PENDING,
+    },
+    isexpert: {
+      type: Boolean,
+      default: false,
+    },
+    listnumber: {
+      type: Number,
+      default: 0,
     },
     rating: {
       type: Number,

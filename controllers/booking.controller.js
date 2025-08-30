@@ -194,8 +194,9 @@ const respondToBooking = async (req, res, next) => {
           )
         );
       }
-      let perkm = await Mastermodel.find();
 
+      let perkm = await Mastermodel.find();
+      console.log(booking.bookingtype, noofkm, perkm[0].charge_per_km);
       if (booking.bookingtype === "emergency") {
         booking.totalamount =
           booking.totalamount + noofkm * perkm[0]?.charge_per_km;

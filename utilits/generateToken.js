@@ -1,7 +1,9 @@
 const jwt = require("jsonwebtoken");
 const { encryptData } = require("./Encryption");
 require("dotenv").config();
+
 const GenerateToken = async (id) => {
+  console.log(process.env.JWT_SCRECT)
   let token = jwt.sign(
     {
       data: id,

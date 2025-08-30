@@ -5,6 +5,7 @@ const {
   GetAllNotifications,
   DeleteNotification,
 } = require("../controllers/notification.controller");
+const { Isuserormechanic } = require("../middleware/Isuserormechanic");
 
 const notificationRouter = express.Router();
 
@@ -12,5 +13,10 @@ const notificationRouter = express.Router();
 notificationRouter.post("/create", Isadmin, CreateNotification);
 notificationRouter.get("/getall", GetAllNotifications);
 notificationRouter.delete("/delete/:id", Isadmin, DeleteNotification);
+notificationRouter.post(
+  "/get/mynotification",
+  Isuserormechanic,
+  DeleteNotification
+);
 
 module.exports = notificationRouter;

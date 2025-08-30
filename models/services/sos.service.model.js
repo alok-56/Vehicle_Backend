@@ -21,6 +21,10 @@ const Sosseviceschema = new mongoose.Schema(
         APPLICATION_CONSTANT.TRUCK,
       ],
     },
+    price: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true }
 );
