@@ -314,7 +314,7 @@ const SendEmail = async (email, type, userName, details) => {
     html: htmlContent,
   };
 
-  const transporter = nodemailer.createTransporter({
+  const transporter = nodemailer.createTransport({
     service: "Gmail",
     auth: {
       user: process.env.Email,
