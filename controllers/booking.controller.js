@@ -167,6 +167,9 @@ const createserviceBooking = async (req, res, next) => {
             title: String("New Booking"),
           });
         }
+        await SendEmail(mechanic.email, "NewBooking", mechanic.name, {
+          amount: payment_details.totalAmount,
+        });
       } catch (notifError) {
         console.error("Error sending notification:", notifError);
       }
@@ -223,9 +226,27 @@ const respondToBooking = async (req, res, next) => {
         mechanicLocation: mechanic.location.coordinates,
       });
 
-      return res
+      res
         .status(STATUS_CODE.SUCCESS)
         .json({ status: true, message: "Booking accepted." });
+
+      setImmediate(async () => {
+        try {
+          const user = await Usermodel.findById(booking.userid);
+          if (user && user.device_token && user.device_token.length) {
+            const message = `You Booking is accepted`;
+            await sendNotifications(user.device_token, {
+              body: String(message),
+              title: String("Booking Accepted"),
+            });
+          }
+          await SendEmail(user.email, "Bookingaccepted", user.name, {
+            amount: booking?.payment_details?.totalAmount,
+          });
+        } catch (notifError) {
+          console.error("Error sending notification:", notifError);
+        }
+      });
     }
 
     if (response === "MECHANICCANCEL") {
@@ -237,9 +258,25 @@ const respondToBooking = async (req, res, next) => {
         mechanicId,
       });
 
-      return res.status(STATUS_CODE.SUCCESS).json({
+      res.status(STATUS_CODE.SUCCESS).json({
         status: true,
         message: "Booking cancelled by mechanic",
+      });
+
+      setImmediate(async () => {
+        try {
+          const user = await Usermodel.findById(booking.userid);
+          if (user && user.device_token && user.device_token.length) {
+            const message = `You Booking is Cancelled By Mechanic`;
+            await sendNotifications(user.device_token, {
+              body: String(message),
+              title: String("Booking Cancelled"),
+            });
+          }
+          await SendEmail(user.email, "Bookingcancelled", user.name, {});
+        } catch (notifError) {
+          console.error("Error sending notification:", notifError);
+        }
       });
     }
 
@@ -253,9 +290,25 @@ const respondToBooking = async (req, res, next) => {
         mechanicId,
       });
 
-      return res.status(STATUS_CODE.SUCCESS).json({
+      res.status(STATUS_CODE.SUCCESS).json({
         status: true,
         message: "Booking cancelled by user",
+      });
+
+      setImmediate(async () => {
+        try {
+          const user = await Mechanicmodel.findById(booking.mechanicid);
+          if (user && user.device_token && user.device_token.length) {
+            const message = `You Booking is Cancelled By User`;
+            await sendNotifications(user.device_token, {
+              body: String(message),
+              title: String("Booking Cancelled"),
+            });
+          }
+          await SendEmail(user.email, "Bookingcancelled", user.name, {});
+        } catch (notifError) {
+          console.error("Error sending notification:", notifError);
+        }
       });
     }
 
@@ -303,9 +356,25 @@ const respondToBooking = async (req, res, next) => {
         mechanicId,
       });
 
-      return res.status(STATUS_CODE.SUCCESS).json({
+      res.status(STATUS_CODE.SUCCESS).json({
         status: true,
         message: "Booking completed",
+      });
+
+      setImmediate(async () => {
+        try {
+          const user = await Usermodel.findById(booking.userid);
+          if (user && user.device_token && user.device_token.length) {
+            const message = `You Booking is Completed! Please pay through cash or online`;
+            await sendNotifications(user.device_token, {
+              body: String(message),
+              title: String("Booking Cancelled"),
+            });
+          }
+          await SendEmail(user.email, "Bookingcompleted", user.name, {});
+        } catch (notifError) {
+          console.error("Error sending notification:", notifError);
+        }
       });
     }
 
