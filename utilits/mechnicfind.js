@@ -102,6 +102,7 @@ const Bookingsmodel = require("../models/booking.model");
 const Mechanicmodel = require("../models/mechanic.model");
 const APPLICATION_CONSTANT = require("../constant/application_constant");
 const { getIO } = require("../utilits/socket");
+const Mastermodel = require("../models/master/master.model");
 
 const MAX_DISTANCE_KM = 20;
 const RESPONSE_TIMEOUT_MS = 15000;
@@ -122,6 +123,8 @@ const startMechanicMatching = async (
   console.log(`--- Matching started for booking: ${bookingId} ---`);
   console.log(`Radius: ${radiusKm} km, Time elapsed: ${totalTimeElapsed} ms`);
 
+  let chargeperkm = await Mastermodel();
+
   const booking = await Bookingsmodel.findById(bookingId);
   if (!booking) {
     console.log("Booking not found or deleted.");
@@ -129,7 +132,9 @@ const startMechanicMatching = async (
   }
 
   if (booking.status !== APPLICATION_CONSTANT.PENDING) {
-    console.log(`Booking ${bookingId} is no longer pending. Current status: ${booking.status}`);
+    console.log(
+      `Booking ${bookingId} is no longer pending. Current status: ${booking.status}`
+    );
     return;
   }
 
@@ -158,7 +163,9 @@ const startMechanicMatching = async (
 
   if (!mechanics.length) {
     if (radiusKm < MAX_DISTANCE_KM) {
-      console.log(`No mechanics found. Increasing radius to ${radiusKm + 1} km.`);
+      console.log(
+        `No mechanics found. Increasing radius to ${radiusKm + 1} km.`
+      );
       return startMechanicMatching(
         bookingId,
         bookingdata,
@@ -208,6 +215,7 @@ const startMechanicMatching = async (
     userLocation: booking.userLocation.coordinates,
     problem: booking.problem,
     bookingdata: bookingdata,
+    perkm: chargeperkm[0].charge_per_km,
   });
 
   // Clear any existing timer
@@ -217,7 +225,9 @@ const startMechanicMatching = async (
   }
 
   const timer = setTimeout(async () => {
-    console.log(`Timeout reached. Waiting for mechanic response expired for booking: ${bookingId}`);
+    console.log(
+      `Timeout reached. Waiting for mechanic response expired for booking: ${bookingId}`
+    );
 
     const updatedBooking = await Bookingsmodel.findById(bookingId);
     if (
@@ -236,7 +246,11 @@ const startMechanicMatching = async (
         });
       } else {
         console.log("No response from mechanic:", mechanic._id.toString());
-        console.log(`Retrying with increased radius (${radiusKm + 1}) and time elapsed: ${newElapsed} ms`);
+        console.log(
+          `Retrying with increased radius (${
+            radiusKm + 1
+          }) and time elapsed: ${newElapsed} ms`
+        );
         startMechanicMatching(
           bookingId,
           bookingdata,
@@ -254,7 +268,11 @@ const startMechanicMatching = async (
   }, RESPONSE_TIMEOUT_MS);
 
   bookingTimers.set(bookingId, timer);
-  console.log(`Timer set for booking: ${bookingId} (waiting ${RESPONSE_TIMEOUT_MS / 1000}s)`);
+  console.log(
+    `Timer set for booking: ${bookingId} (waiting ${
+      RESPONSE_TIMEOUT_MS / 1000
+    }s)`
+  );
 };
 
 const selectBestMechanic = async (mechanics) => {

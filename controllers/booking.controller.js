@@ -161,12 +161,10 @@ const createserviceBooking = async (req, res, next) => {
         const mechanic = await Mechanicmodel.findById(mechanicid);
         if (mechanic && mechanic.device_token && mechanic.device_token.length) {
           const message = `You have a new service booking of amount ${payment_details?.totalamount}`;
-          await sendNotifications(
-            mechanic.device_token,
-            message,
-            "booking",
-            true
-          );
+          await sendNotifications(mechanic.device_token, {
+            body: String(message),
+            title: String("New Booking"),
+          });
         }
       } catch (notifError) {
         console.error("Error sending notification:", notifError);
@@ -205,8 +203,10 @@ const respondToBooking = async (req, res, next) => {
       let perkm = await Mastermodel.find();
       if (booking.bookingtype === "emergency") {
         const perKmCharge = noofkm * (perkm[0]?.charge_per_km || 0);
-        booking.payment_details.totalamount = booking?.payment_details?.totalamount + perKmCharge;
-        booking.payment_details.dueamount = booking?.payment_details?.dueamount + perKmCharge;
+        booking.payment_details.totalamount =
+          booking?.payment_details?.totalamount + perKmCharge;
+        booking.payment_details.dueamount =
+          booking?.payment_details?.dueamount + perKmCharge;
       }
 
       booking.status = APPLICATION_CONSTANT.ACCEPTED;
