@@ -1,8 +1,10 @@
 const APPLICATION_CONSTANT = require("../constant/application_constant");
 const STATUS_CODE = require("../constant/status_code");
+const Mastermodel = require("../models/master/master.model");
 const Mechanicmodel = require("../models/mechanic.model");
 const Otpmodel = require("../models/otp.model");
 const Referralmodel = require("../models/referral.model");
+const Usermodel = require("../models/user.model");
 const AppError = require("../utilits/appError");
 const SendEmail = require("../utilits/email/sendEmail");
 const GenerateToken = require("../utilits/generateToken");
@@ -43,13 +45,15 @@ const CreateMechanic = async (req, res, next) => {
     // resister logic
     else {
       // check referral code
+
       if (referral_code) {
-        let referraluser = await Mechanicmodel.findOne({
-          referral_code: referral_code,
-        });
+        let referraluser = await Mechanicmodel.findOne({ referral_code });
+        if (!referraluser) {
+          referraluser = await Usermodel.findOne({ referral_code });
+        }
         if (!referraluser) {
           return next(
-            new AppError("Invailed referral code ", STATUS_CODE.VALIDATIONERROR)
+            new AppError("Invalid referral code", STATUS_CODE.VALIDATIONERROR)
           );
         }
       }
@@ -154,12 +158,24 @@ const VerifyMechanic = async (req, res, next) => {
         device_token: device_token,
       });
 
+      let masterearning = await Mastermodel.find();
+
       // create referral
       if (referral_code) {
         await Referralmodel.create({
           userid: newuser._id,
           refer_code: referral_code,
+          earning: masterearning[0]?.referral_bonus,
         });
+        let user = await Mechanicmodel.findOne({
+          referral_code: referral_code,
+        });
+        if (!user) {
+          user = await Usermodel.findOne({ referral_code: referral_code });
+        }
+        user.wallet_amount =
+          (user.wallet_amount || 0) + (masterearning[0]?.referral_bonus || 0);
+        await user.save();
       }
 
       // token generation

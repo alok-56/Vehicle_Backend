@@ -9,6 +9,7 @@ const Transactionmodel = require("../models/transaction.model");
 const Mastermodel = require("../models/master/master.model");
 const { default: mongoose } = require("mongoose");
 const { sendNotifications } = require("../utilits/firebase");
+const Usermodel = require("../models/user.model");
 
 const createEmergencyBooking = async (req, res, next) => {
   try {
@@ -311,10 +312,51 @@ const respondToBooking = async (req, res, next) => {
     if (response === "pay") {
     }
 
-    if (response === "Reviewbooking") {
-      
+    if (response === "userconformed") {
+      let user = await Usermodel.findById(booking.userid);
+      let mechnic = await Mechanicmodel.findById(booking.mechanicid);
+      let points = await Mastermodel.find();
+      user.wallet_amount = user.wallet_amount + points[0].Loyality_points;
+      mechnic.wallet_amount = mechnic.wallet_amount + points[0].Loyality_points;
+
+      booking.status = APPLICATION_CONSTANT.USERCONFORM;
+      await booking.save();
+      await user.save();
+      await mechnic.save();
+
+      return res.status(STATUS_CODE.SUCCESS).json({
+        status: true,
+        message: "Loyality Points added",
+      });
     }
 
+    if (response === "Reviewbooking") {
+      booking.reviewstar = star;
+      await booking.save();
+
+      const reviews = await Bookingsmodel.find({
+        mechanicid: booking.mechanicid,
+        reviewstar: { $gte: 1 },
+      }).select("reviewstar");
+
+      const totalReviews = reviews.length;
+      const totalStars = reviews.reduce(
+        (sum, r) => sum + (r.reviewstar || 0),
+        0
+      );
+      const avgRating = totalReviews > 0 ? totalStars / totalReviews : 0;
+
+      const mechanic = await Mechanicmodel.findById(booking.mechanicid);
+      mechanic.rating = avgRating.toFixed(1);
+      booking.status = APPLICATION_CONSTANT.RATINGGIVEN;
+      await booking.save();
+      await mechanic.save();
+
+      return res.status(STATUS_CODE.SUCCESS).json({
+        status: true,
+        message: "Successfully rating added",
+      });
+    }
     return next(new AppError("Invalid response type", STATUS_CODE.BADREQUEST));
   } catch (err) {
     return next(new AppError(err.message, STATUS_CODE.SERVERERROR));

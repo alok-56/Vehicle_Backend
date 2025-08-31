@@ -1,4 +1,5 @@
 const STATUS_CODE = require("../constant/status_code");
+const Loyalitypaymodel = require("../models/loyality.model");
 const Mechanicmodel = require("../models/mechanic.model");
 const Referralmodel = require("../models/referral.model");
 const Usermodel = require("../models/user.model");
@@ -45,4 +46,79 @@ const GetAllMyreferral = async (req, res, next) => {
   }
 };
 
-module.exports = GetAllMyreferral;
+// Pay Loyality Amount
+const PayLoyalityAmount = async (req, res, next) => {
+  try {
+    const { amount, usertype, transaction_id, userid } = req.body;
+
+    if (!amount || !usertype || !transaction_id || !userid) {
+      return next(
+        new AppError("Missing required fields", STATUS_CODE.VALIDATIONERROR)
+      );
+    }
+
+    // Create loyalty payment record
+    await Loyalitypaymodel.create({
+      amount,
+      usertype,
+      transaction_id,
+      userid,
+    });
+
+    // Fetch user based on type
+    let user;
+    if (usertype === "user") {
+      user = await Usermodel.findById(userid);
+    } else {
+      user = await Mechanicmodel.findById(userid);
+    }
+
+    if (!user) {
+      return next(new AppError("User not found", STATUS_CODE.NOTFOUND));
+    }
+
+    // Subtract amount from wallet
+    user.wallet_amount = (user.wallet_amount || 0) - (amount || 0);
+    await user.save();
+
+    return res.status(200).json({
+      status: true,
+      message: "Loyalty points transferred to your bank account",
+    });
+  } catch (error) {
+    return next(new AppError(error.message, STATUS_CODE.SERVERERROR));
+  }
+};
+
+// Get Mypay Loyality
+const GetMyPayLoyality = async (req, res, next) => {
+  try {
+    
+    if (!userid) {
+      return next(
+        new AppError(
+          "User ID and user type are required",
+          STATUS_CODE.VALIDATIONERROR
+        )
+      );
+    }
+
+    const payments = await Loyalitypaymodel.find({
+      userid: req.user,
+    }).sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      status: true,
+      data: payments,
+      count: payments.length,
+    });
+  } catch (error) {
+    return next(new AppError(error.message, STATUS_CODE.SERVERERROR));
+  }
+};
+
+module.exports = {
+  GetAllMyreferral,
+  PayLoyalityAmount,
+  GetMyPayLoyality,
+};

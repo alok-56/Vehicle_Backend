@@ -10,7 +10,10 @@ const {
 } = require("../controllers/user.controller");
 const { Isuser } = require("../middleware/Isuser");
 const { Isadmin } = require("../middleware/Isadmin");
-const GetAllMyreferral = require("../controllers/referrals.controller");
+const {
+  GetAllMyreferral,
+  GetMyPayLoyality,
+} = require("../controllers/referrals.controller");
 const { Isuserormechanic } = require("../middleware/Isuserormechanic");
 const userRouter = express.Router();
 
@@ -22,5 +25,6 @@ userRouter.patch("/blockuser/:id", Isadmin, blockuser);
 userRouter.delete("/deleteuser/:id", Isadmin, DeleteUser);
 userRouter.patch("/updateprofile", Isuser, UpdateProfile);
 userRouter.get("/myrefeeral", Isuserormechanic, GetAllMyreferral);
+userRouter.get("/get/loyalitytransaction", Isuserormechanic, GetMyPayLoyality);
 
 module.exports = userRouter;

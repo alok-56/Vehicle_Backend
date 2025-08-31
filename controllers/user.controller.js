@@ -1,5 +1,7 @@
 const APPLICATION_CONSTANT = require("../constant/application_constant");
 const STATUS_CODE = require("../constant/status_code");
+const Mastermodel = require("../models/master/master.model");
+const Mechanicmodel = require("../models/mechanic.model");
 const Otpmodel = require("../models/otp.model");
 const Referralmodel = require("../models/referral.model");
 const Usermodel = require("../models/user.model");
@@ -44,12 +46,13 @@ const CreateUser = async (req, res, next) => {
     else {
       // check referral code
       if (referral_code) {
-        let referraluser = await Usermodel.findOne({
-          referral_code: referral_code,
-        });
+        let referraluser = await Usermodel.findOne({ referral_code });
+        if (!referraluser) {
+          referraluser = await Mechanicmodel.findOne({ referral_code });
+        }
         if (!referraluser) {
           return next(
-            new AppError("Invailed referral code ", STATUS_CODE.VALIDATIONERROR)
+            new AppError("Invalid referral code", STATUS_CODE.VALIDATIONERROR)
           );
         }
       }
@@ -121,7 +124,7 @@ const VerifyUser = async (req, res, next) => {
       // token generation
       let token = await GenerateToken(user._id);
       await Usermodel.findByIdAndUpdate(user._id, {
-        device_token: device_token
+        device_token: device_token,
       });
       // delete otp
       await Otpmodel.findByIdAndDelete(fetchotp._id);
@@ -150,14 +153,25 @@ const VerifyUser = async (req, res, next) => {
         referral_code: referaalcode ? referaalcode : null,
         vehicle_type: vehicle_type,
         vehicle_model: brand,
-        device_token: device_token
+        device_token: device_token,
       });
+
+      let masterearning = await Mastermodel.find();
 
       if (referral_code) {
         await Referralmodel.create({
           userid: newuser._id,
           refer_code: referral_code,
+          earning: masterearning[0]?.referral_bonus,
         });
+
+        let user = await Usermodel.findOne({ referral_code: referral_code });
+        if (!user) {
+          user = await Mechanicmodel.findOne({ referral_code: referral_code });
+        }
+        user.wallet_amount =
+          (user.wallet_amount || 0) + (masterearning[0]?.referral_bonus || 0);
+        await user.save();
       }
 
       // token generation
