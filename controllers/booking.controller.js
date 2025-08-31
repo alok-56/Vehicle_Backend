@@ -67,6 +67,8 @@ const Findservicesmechnic = async (req, res, next) => {
       expert,
     } = req.query;
 
+    console.log(date,slot)
+
     const bookedMechanics = await Bookingsmodel.find({
       service_date: new Date(date),
       slot: slot,
@@ -78,6 +80,9 @@ const Findservicesmechnic = async (req, res, next) => {
         ],
       },
     }).distinct("mechanicid");
+
+    console.log(bookedMechanics)
+
 
     const query = {
       vehicle_type: vehicle_type,
