@@ -381,7 +381,7 @@ const Mechanicowndata = async (req, res, next) => {
 const GetMechOwnprofile = async (req, res, next) => {
   try {
     const mech = await Mechanicmodel.findById(req.mechanic).select(
-      "name email phone_number referral_code vehicle_type documents.profile_photo shop_details"
+      "name email phone_number referral_code vehicle_type documents.profile_photo shop_details wallet_amount"
     );
 
     if (!mech) {
