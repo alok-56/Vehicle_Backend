@@ -184,6 +184,7 @@ const respondToBooking = async (req, res, next) => {
       cancelreason,
       paymentmethod,
       noofkm = 0,
+      star,
     } = req.body;
 
     const booking = await Bookingsmodel.findById(bookingId);
@@ -308,6 +309,10 @@ const respondToBooking = async (req, res, next) => {
     }
 
     if (response === "pay") {
+    }
+
+    if (response === "Reviewbooking") {
+      
     }
 
     return next(new AppError("Invalid response type", STATUS_CODE.BADREQUEST));

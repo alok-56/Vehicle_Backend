@@ -123,7 +123,7 @@ const startMechanicMatching = async (
   console.log(`--- Matching started for booking: ${bookingId} ---`);
   console.log(`Radius: ${radiusKm} km, Time elapsed: ${totalTimeElapsed} ms`);
 
-  let chargeperkm = await Mastermodel();
+  let perkm = await Mastermodel.find();
 
   const booking = await Bookingsmodel.findById(bookingId);
   if (!booking) {
@@ -210,13 +210,15 @@ const startMechanicMatching = async (
   await booking.save();
 
   console.log("Sending request to mechanic:", mechanic._id.toString());
-  getIO().to(mechanic.socketId).emit("newBookingRequest", {
-    bookingId: booking._id,
-    userLocation: booking.userLocation.coordinates,
-    problem: booking.problem,
-    bookingdata: bookingdata,
-    perkm: chargeperkm[0].charge_per_km,
-  });
+  getIO()
+    .to(mechanic.socketId)
+    .emit("newBookingRequest", {
+      bookingId: booking._id,
+      userLocation: booking.userLocation.coordinates,
+      problem: booking.problem,
+      bookingdata: bookingdata,
+      perkm: perkm[0]?.charge_per_km || 0,
+    });
 
   // Clear any existing timer
   if (bookingTimers.has(bookingId)) {
