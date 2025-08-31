@@ -95,7 +95,7 @@ const Findservicesmechnic = async (req, res, next) => {
       vehicle_type: vehicle_type,
       _id: { $nin: bookedMechanics },
       status: APPLICATION_CONSTANT.APPROVE,
-      // isexpert: expert,
+       isexpert: expert,
     };
 
     const isLocationFilterEnabled =

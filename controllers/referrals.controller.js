@@ -93,7 +93,6 @@ const PayLoyalityAmount = async (req, res, next) => {
 // Get Mypay Loyality
 const GetMyPayLoyality = async (req, res, next) => {
   try {
-  
 
     const payments = await Loyalitypaymodel.find({
       userid: req.user,
