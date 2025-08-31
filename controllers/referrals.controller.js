@@ -93,15 +93,7 @@ const PayLoyalityAmount = async (req, res, next) => {
 // Get Mypay Loyality
 const GetMyPayLoyality = async (req, res, next) => {
   try {
-    
-    if (!userid) {
-      return next(
-        new AppError(
-          "User ID and user type are required",
-          STATUS_CODE.VALIDATIONERROR
-        )
-      );
-    }
+  
 
     const payments = await Loyalitypaymodel.find({
       userid: req.user,
