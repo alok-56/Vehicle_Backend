@@ -67,10 +67,18 @@ const Findservicesmechnic = async (req, res, next) => {
       expert,
     } = req.query;
 
-    console.log(date,slot)
+    const day = new Date(date);
+    const startDay = new Date(day);
+    startDay.setUTCHours(0, 0, 0, 0);
+
+    const endDay = new Date(day);
+    endDay.setUTCHours(23, 59, 59, 999);
 
     const bookedMechanics = await Bookingsmodel.find({
-      service_date: new Date(date),
+      service_date: {
+        $gte: startDay,
+        $lte: endDay,
+      },
       slot: slot,
       status: {
         $in: [
@@ -81,8 +89,7 @@ const Findservicesmechnic = async (req, res, next) => {
       },
     }).distinct("mechanicid");
 
-    console.log(bookedMechanics)
-
+    console.log(bookedMechanics);
 
     const query = {
       vehicle_type: vehicle_type,
