@@ -101,7 +101,7 @@ const SendEmail = async (email, type, userName, details) => {
               <div style="background:#d4edda;padding:20px;border-radius:8px;margin:20px 0;border-left:4px solid #28a745;">
                 <p style="margin:0;color:#155724;font-size:14px;">
                   <strong>Service Details:</strong><br>
-                  • Total Amount: ₹${details.amount || 'N/A'}<br>
+                  • Total Amount: ₹${details.amount || "N/A"}<br>
                   • Status: Confirmed<br>
                   • The mechanic is on the way to your location
                 </p>
@@ -186,20 +186,29 @@ const SendEmail = async (email, type, userName, details) => {
             <div style="padding:30px;">
               <h3 style="color:#2c3e50;margin:0 0 20px 0;">Hello ${userName},</h3>
               <p style="color:#7f8c8d;margin:0 0 20px 0;line-height:1.6;">
-                ${details.description || 'Your payout has been released and processed successfully.'}
+                ${
+                  details.description ||
+                  "Your payout has been released and processed successfully."
+                }
               </p>
               
               <div style="background:#d4edda;padding:25px;border-radius:8px;margin:20px 0;border-left:4px solid #28a745;">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
                   <span style="color:#155724;font-size:16px;font-weight:bold;">Payout Amount:</span>
-                  <span style="color:#28a745;font-size:28px;font-weight:bold;">₹${details.amount || 'N/A'}</span>
+                  <span style="color:#28a745;font-size:28px;font-weight:bold;">₹${
+                    details.amount || "N/A"
+                  }</span>
                 </div>
-                ${details.transactionid ? `
+                ${
+                  details.transactionid
+                    ? `
                 <div style="display:flex;justify-content:space-between;align-items:center;">
                   <span style="color:#155724;font-size:14px;">Transaction ID:</span>
                   <span style="color:#6c757d;font-size:14px;font-family:monospace;">${details.transactionid}</span>
                 </div>
-                ` : ''}
+                `
+                    : ""
+                }
               </div>
               
               <div style="background:#e3f2fd;padding:20px;margin:20px 0;border-radius:8px;border-left:4px solid #2196f3;">
@@ -208,7 +217,11 @@ const SendEmail = async (email, type, userName, details) => {
                   • Status: Successfully Processed ✅<br>
                   • The amount will reflect in your account within 24-48 hours<br>
                   • Keep this email for your records<br>
-                  ${details.transactionid ? '• Use Transaction ID for any payment queries' : ''}
+                  ${
+                    details.transactionid
+                      ? "• Use Transaction ID for any payment queries"
+                      : ""
+                  }
                 </p>
               </div>
               
@@ -242,7 +255,10 @@ const SendEmail = async (email, type, userName, details) => {
               <div style="background:#f8f9fa;padding:25px;border-radius:8px;margin:20px 0;text-align:center;">
                 <h4 style="color:#2c3e50;margin:0 0 10px 0;font-size:18px;">Status Update</h4>
                 <p style="color:#6f42c1;font-size:16px;font-weight:bold;margin:0;">
-                  ${details.description || 'Your application status has been updated.'}
+                  ${
+                    details.description ||
+                    "Your application status has been updated."
+                  }
                 </p>
               </div>
               
@@ -266,7 +282,7 @@ const SendEmail = async (email, type, userName, details) => {
   const mailOptions = {
     from: process.env.Email,
     to: email,
-    subject: subject + " - " + new Date().toLocaleDateString(),
+    subject: new Date().toLocaleDateString(),
     html: htmlContent,
   };
 
