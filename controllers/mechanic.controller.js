@@ -7,6 +7,7 @@ const Referralmodel = require("../models/referral.model");
 const Usermodel = require("../models/user.model");
 const AppError = require("../utilits/appError");
 const SendEmail = require("../utilits/email/sendEmail");
+const { sendNotifications } = require("../utilits/firebase");
 const GenerateToken = require("../utilits/generateToken");
 
 // Create user Otp send
@@ -257,9 +258,27 @@ const Checkapplication = async (req, res, next) => {
       { new: true }
     );
 
-    return res.status(STATUS_CODE.SUCCESS).json({
+    res.status(STATUS_CODE.SUCCESS).json({
       status: true,
       message: "User updated successfully",
+    });
+
+    setImmediate(async () => {
+      try {
+        const user = await Mechanicmodel.findById(id);
+        if (user && user.device_token && user.device_token.length) {
+          const message = `Your Application Status has been ${status}`;
+          await sendNotifications(user.device_token, {
+            body: String(message),
+            title: String("Application Updated"),
+          });
+        }
+        await SendEmail(user.email, "Applicationupdated", user.name, {
+          description: `Your Application Status has been ${status}`,
+        });
+      } catch (notifError) {
+        console.error("Error sending notification:", notifError);
+      }
     });
   } catch (error) {
     return next(new AppError(error.message, STATUS_CODE.SERVERERROR));

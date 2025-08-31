@@ -10,6 +10,7 @@ const Mastermodel = require("../models/master/master.model");
 const { default: mongoose } = require("mongoose");
 const { sendNotifications } = require("../utilits/firebase");
 const Usermodel = require("../models/user.model");
+const SendEmail = require("../utilits/email/sendEmail");
 
 const createEmergencyBooking = async (req, res, next) => {
   try {
@@ -936,10 +937,30 @@ const Paypayout = async (req, res, next) => {
       type: "payout",
     });
 
-    return res.status(200).json({
+    res.status(200).json({
       status: true,
       code: 200,
       data: createpayout,
+    });
+
+    setImmediate(async () => {
+      try {
+        const user = await Mechanicmodel.findById(mechanicid);
+        if (user && user.device_token && user.device_token.length) {
+          const message = `Your Payout has been released`;
+          await sendNotifications(user.device_token, {
+            body: String(message),
+            title: String("Payout released"),
+          });
+        }
+        await SendEmail(user.email, "Payout", user.name, {
+          description: `Your Payout has been released`,
+          amount: amount,
+          transactionid: transaction_id,
+        });
+      } catch (notifError) {
+        console.error("Error sending notification:", notifError);
+      }
     });
   } catch (error) {
     return next(new AppError(error.message, STATUS_CODE.SERVERERROR));
