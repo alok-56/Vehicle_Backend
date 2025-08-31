@@ -268,7 +268,7 @@ const Checkapplication = async (req, res, next) => {
         const user = await Mechanicmodel.findById(id);
         if (user && user.device_token && user.device_token.length) {
           const message = `Your Application Status has been ${status}`;
-          await sendNotifications(user.device_token, {
+          await sendNotifications([user.device_token], {
             body: String(message),
             title: String("Application Updated"),
           });

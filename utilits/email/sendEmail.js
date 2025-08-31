@@ -107,14 +107,6 @@ const SendEmail = async (email, type, userName, details) => {
                 </p>
               </div>
               
-              <div style="background:#e3f2fd;padding:20px;margin:20px 0;border-radius:8px;border-left:4px solid #2196f3;">
-                <p style="margin:0;color:#1565c0;font-size:14px;">
-                  <strong>What's Next:</strong><br>
-                  • Track your mechanic's location in real-time<br>
-                  • Keep your phone handy for mechanic contact<br>
-                  • Prepare the vehicle for inspection
-                </p>
-              </div>
             </div>
             
             ${companyFooter}
@@ -138,24 +130,6 @@ const SendEmail = async (email, type, userName, details) => {
               <p style="color:#7f8c8d;margin:0 0 20px 0;line-height:1.6;">
                 We regret to inform you that your booking has been cancelled. We apologize for any inconvenience caused.
               </p>
-              
-              <div style="background:#f8d7da;padding:20px;border-radius:8px;margin:20px 0;border-left:4px solid #dc3545;">
-                <p style="margin:0;color:#721c24;font-size:14px;">
-                  <strong>Cancellation Details:</strong><br>
-                  • Your booking has been cancelled<br>
-                  • Any advance payments will be refunded<br>
-                  • You can book again anytime
-                </p>
-              </div>
-              
-              <div style="background:#e3f2fd;padding:20px;margin:20px 0;border-radius:8px;border-left:4px solid #2196f3;">
-                <p style="margin:0;color:#1565c0;font-size:14px;">
-                  <strong>Need Help?</strong><br>
-                  • You can create a new booking anytime<br>
-                  • Contact our support team for assistance<br>
-                  • We're here to help with your vehicle needs
-                </p>
-              </div>
             </div>
             
             ${companyFooter}
@@ -185,16 +159,6 @@ const SendEmail = async (email, type, userName, details) => {
                   <strong>Service Summary:</strong><br>
                   • Service Status: Completed ✅<br>
                   • Payment: Please pay through cash or online<br>
-                  • Quality: Guaranteed workmanship
-                </p>
-              </div>
-              
-              <div style="background:#fff3cd;padding:20px;margin:20px 0;border-radius:8px;border-left:4px solid #ffc107;">
-                <p style="margin:0;color:#856404;font-size:14px;">
-                  <strong>Payment Options:</strong><br>
-                  • Cash Payment: Pay directly to the mechanic<br>
-                  • Online Payment: Use our secure payment gateway<br>
-                  • UPI/Card: Quick and convenient digital payment
                 </p>
               </div>
               
@@ -282,15 +246,7 @@ const SendEmail = async (email, type, userName, details) => {
                 </p>
               </div>
               
-              <div style="background:#e7e3ff;padding:20px;margin:20px 0;border-radius:8px;border-left:4px solid #6f42c1;">
-                <p style="margin:0;color:#4a154b;font-size:14px;">
-                  <strong>What's Next:</strong><br>
-                  • Check your dashboard for detailed information<br>
-                  • You will receive further instructions if required<br>
-                  • Contact support if you have any questions<br>
-                  • Keep checking your email for updates
-                </p>
-              </div>
+            
               
               <div style="text-align:center;margin:20px 0;">
                 <p style="color:#7f8c8d;margin:0;font-size:14px;">We appreciate your patience during the review process.</p>

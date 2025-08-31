@@ -163,13 +163,13 @@ const createserviceBooking = async (req, res, next) => {
         const mechanic = await Mechanicmodel.findById(mechanicid);
         if (mechanic && mechanic.device_token && mechanic.device_token.length) {
           const message = `You have a new service booking of amount ${payment_details?.totalamount}`;
-          await sendNotifications(mechanic.device_token, {
+          await sendNotifications([mechanic.device_token], {
             body: String(message),
             title: String("New Booking"),
           });
         }
         await SendEmail(mechanic.email, "NewBooking", mechanic.name, {
-          amount: payment_details.totalAmount,
+          amount: payment_details.totalamount,
         });
       } catch (notifError) {
         console.error("Error sending notification:", notifError);
@@ -236,7 +236,7 @@ const respondToBooking = async (req, res, next) => {
           const user = await Usermodel.findById(booking.userid);
           if (user && user.device_token && user.device_token.length) {
             const message = `You Booking is accepted`;
-            await sendNotifications(user.device_token, {
+            await sendNotifications([user.device_token], {
               body: String(message),
               title: String("Booking Accepted"),
             });
@@ -269,7 +269,7 @@ const respondToBooking = async (req, res, next) => {
           const user = await Usermodel.findById(booking.userid);
           if (user && user.device_token && user.device_token.length) {
             const message = `You Booking is Cancelled By Mechanic`;
-            await sendNotifications(user.device_token, {
+            await sendNotifications([user.device_token], {
               body: String(message),
               title: String("Booking Cancelled"),
             });
@@ -301,7 +301,7 @@ const respondToBooking = async (req, res, next) => {
           const user = await Mechanicmodel.findById(booking.mechanicid);
           if (user && user.device_token && user.device_token.length) {
             const message = `You Booking is Cancelled By User`;
-            await sendNotifications(user.device_token, {
+            await sendNotifications([user.device_token], {
               body: String(message),
               title: String("Booking Cancelled"),
             });
@@ -367,7 +367,7 @@ const respondToBooking = async (req, res, next) => {
           const user = await Usermodel.findById(booking.userid);
           if (user && user.device_token && user.device_token.length) {
             const message = `You Booking is Completed! Please pay through cash or online`;
-            await sendNotifications(user.device_token, {
+            await sendNotifications([user.device_token], {
               body: String(message),
               title: String("Booking Cancelled"),
             });
@@ -948,7 +948,7 @@ const Paypayout = async (req, res, next) => {
         const user = await Mechanicmodel.findById(mechanicid);
         if (user && user.device_token && user.device_token.length) {
           const message = `Your Payout has been released`;
-          await sendNotifications(user.device_token, {
+          await sendNotifications([user.device_token], {
             body: String(message),
             title: String("Payout released"),
           });
