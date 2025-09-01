@@ -24,9 +24,11 @@ const GetAllMyreferral = async (req, res, next) => {
         let user = await Usermodel.findById(ref.userid).select(
           "name email phone_number profilepicture"
         );
+        console.log(ref)
         let mechanic = await Mechanicmodel.findById(ref.userid).select(
           "name email phone_number documents.profile_photo"
         );
+
 
         return {
           ...ref.toObject(),
@@ -35,6 +37,8 @@ const GetAllMyreferral = async (req, res, next) => {
         };
       })
     );
+
+    
 
     return res.status(STATUS_CODE.SUCCESS).json({
       status: true,

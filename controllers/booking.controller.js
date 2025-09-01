@@ -95,8 +95,11 @@ const Findservicesmechnic = async (req, res, next) => {
       vehicle_type: vehicle_type,
       _id: { $nin: bookedMechanics },
       status: APPLICATION_CONSTANT.APPROVE,
-       isexpert: expert,
     };
+
+    if(expert){
+      query.isexpert=true
+    }
 
     const isLocationFilterEnabled =
       lat !== "any" && lng !== "any" && radiusKm !== "any";
@@ -202,6 +205,7 @@ const respondToBooking = async (req, res, next) => {
       paymentmethod,
       noofkm = 0,
       star,
+      imageurl,
     } = req.body;
 
     const booking = await Bookingsmodel.findById(bookingId);
@@ -335,6 +339,7 @@ const respondToBooking = async (req, res, next) => {
       booking.payment_status = transactionStatus;
       booking.payment_details.dueamount = 0;
       booking.payment_details.paidamount = booking.payment_details.totalamount;
+      booking.payment_type = paymentmethod;
 
       await Transactionmodel.create({
         bookingId: booking._id,
@@ -391,7 +396,16 @@ const respondToBooking = async (req, res, next) => {
       });
     }
 
-    if (response === "pay") {
+    if (response === "Uploadscreen") {
+      let payments = await Transactionmodel.findOne({ bookingId: booking._id });
+      payments.paymentscreenshot = imageurl;
+
+      await payments.save();
+
+      return res.status(STATUS_CODE.SUCCESS).json({
+        status: true,
+        message: "Screenshot uploaded",
+      });
     }
 
     if (response === "userconformed") {
@@ -489,8 +503,8 @@ const GetAllbooking = async (req, res, next) => {
         .skip(parseInt(skip))
         .limit(parseInt(limit))
         .sort({ createdAt: -1 })
-        .populate("userid", "name email phone")
-        .populate("mechanicid", "name phone"),
+        .populate("userid", "name email phone_number")
+        .populate("mechanicid", "name phone_number"),
       Bookingsmodel.countDocuments(query),
     ]);
 

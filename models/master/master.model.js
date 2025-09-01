@@ -30,6 +30,9 @@ const Masterschema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    upi_number: {
+      type: String,
+    },
   },
   { timestamps: true }
 );

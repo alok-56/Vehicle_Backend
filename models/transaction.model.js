@@ -48,6 +48,9 @@ const Transactionschema = new mongoose.Schema(
       type: Object,
       required: true,
     },
+    paymentscreenshot: {
+      type: String,
+    },
     type: {
       type: String,
       default: "payment",
