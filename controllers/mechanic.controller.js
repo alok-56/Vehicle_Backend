@@ -489,7 +489,8 @@ const UpdatemechanicLocation = async (req, res, next) => {
 // Get Location
 const GetmechanicLocation = async (req, res, next) => {
   try {
-    let location = await Locationmodel.findOne({ mechanicid: req.mechanic });
+    let { mechanicid } = req.query;
+    let location = await Locationmodel.findOne({ mechanicid: mechanicid });
     if (!location) {
       return next(new AppError("Location not found", STATUS_CODE.NOTFOUND));
     }
@@ -516,5 +517,5 @@ module.exports = {
   GetMechOwnprofile,
   UpdateMechanicProfile,
   UpdatemechanicLocation,
-  GetmechanicLocation
+  GetmechanicLocation,
 };
