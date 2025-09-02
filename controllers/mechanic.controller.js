@@ -1,5 +1,6 @@
 const APPLICATION_CONSTANT = require("../constant/application_constant");
 const STATUS_CODE = require("../constant/status_code");
+const Locationmodel = require("../models/locationTrack.model");
 const Mastermodel = require("../models/master/master.model");
 const Mechanicmodel = require("../models/mechanic.model");
 const Otpmodel = require("../models/otp.model");
@@ -455,6 +456,36 @@ const UpdateMechanicProfile = async (req, res, next) => {
   }
 };
 
+// Update Location
+const UpdatemechanicLocation = async (req, res, next) => {
+  try {
+    let { lat, long } = req.body;
+    if (!lat || !long) {
+      return next(new AppError("Missing fields", STATUS_CODE.VALIDATIONERROR));
+    }
+
+    let location = await Locationmodel.findOne({ mechanicid: req.mechanic });
+    if (location) {
+      location.lat = lat;
+      location.long = long;
+      await location.save();
+    } else {
+      await Locationmodel.create({
+        lat: lat,
+        long: long,
+        mechanicid: req.mechanic,
+      });
+    }
+    return res.status(STATUS_CODE.SUCCESS).json({
+      status: true,
+      code: 200,
+      message: "Location updated successfully",
+    });
+  } catch (error) {
+    return next(new AppError(error.message, STATUS_CODE.SERVERERROR));
+  }
+};
+
 module.exports = {
   CreateMechanic,
   VerifyMechanic,
@@ -466,4 +497,5 @@ module.exports = {
   Mechanicowndata,
   GetMechOwnprofile,
   UpdateMechanicProfile,
+  UpdatemechanicLocation,
 };
