@@ -31,6 +31,6 @@ mechanicRouter.delete("/deletemechnic/:id", Isadmin, DeleteMechanic);
 mechanicRouter.get("/ownprofile", Ismechanic, GetMechOwnprofile);
 mechanicRouter.patch("/update", Ismechanic, UpdateMechanicProfile);
 mechanicRouter.patch("/update/location", Ismechanic, UpdatemechanicLocation);
-mechanicRouter.patch("/get/location", Ismechanic, GetmechanicLocation);
+mechanicRouter.patch("/get/location", Isuser, GetmechanicLocation);
 
 module.exports = mechanicRouter;

@@ -282,7 +282,7 @@ const SendEmail = async (email, type, userName, details) => {
   const mailOptions = {
     from: process.env.Email,
     to: email,
-    subject: new Date(),
+    subject: subject + "-" + new Date(),
     html: htmlContent,
   };
 
