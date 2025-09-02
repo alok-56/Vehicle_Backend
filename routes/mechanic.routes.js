@@ -11,6 +11,7 @@ const {
   GetMechOwnprofile,
   UpdateMechanicProfile,
   UpdatemechanicLocation,
+  GetmechanicLocation,
 } = require("../controllers/mechanic.controller");
 const { Ismechanic } = require("../middleware/Ismechanic");
 const { Isadmin } = require("../middleware/Isadmin");
@@ -30,5 +31,6 @@ mechanicRouter.delete("/deletemechnic/:id", Isadmin, DeleteMechanic);
 mechanicRouter.get("/ownprofile", Ismechanic, GetMechOwnprofile);
 mechanicRouter.patch("/update", Ismechanic, UpdateMechanicProfile);
 mechanicRouter.patch("/update/location", Ismechanic, UpdatemechanicLocation);
+mechanicRouter.patch("/get/location", Ismechanic, GetmechanicLocation);
 
 module.exports = mechanicRouter;

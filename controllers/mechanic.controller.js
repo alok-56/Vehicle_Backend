@@ -486,6 +486,24 @@ const UpdatemechanicLocation = async (req, res, next) => {
   }
 };
 
+// Get Location
+const GetmechanicLocation = async (req, res, next) => {
+  try {
+    let location = await Locationmodel.findOne({ mechanicid: req.mechanic });
+    if (!location) {
+      return next(new AppError("Location not found", STATUS_CODE.NOTFOUND));
+    }
+    return res.status(STATUS_CODE.SUCCESS).json({
+      status: true,
+      code: 200,
+      message: "Location fetched successfully",
+      data: location,
+    });
+  } catch (error) {
+    return next(new AppError(error.message, STATUS_CODE.SERVERERROR));
+  }
+};
+
 module.exports = {
   CreateMechanic,
   VerifyMechanic,
@@ -498,4 +516,5 @@ module.exports = {
   GetMechOwnprofile,
   UpdateMechanicProfile,
   UpdatemechanicLocation,
+  GetmechanicLocation
 };
