@@ -330,10 +330,12 @@ const respondToBooking = async (req, res, next) => {
     }
 
     if (response === "BOOKINGCOMPLETED") {
-      const transactionStatus =
-        paymentmethod === APPLICATION_CONSTANT.CASH
-          ? APPLICATION_CONSTANT.PAID
-          : APPLICATION_CONSTANT.PENDING;
+      // const transactionStatus =
+      //   paymentmethod === APPLICATION_CONSTANT.CASH
+      //     ? APPLICATION_CONSTANT.PAID
+      //     : APPLICATION_CONSTANT.PENDING;
+
+      const transactionStatus = APPLICATION_CONSTANT.PAID;
 
       booking.status = APPLICATION_CONSTANT.COMPLETED;
       booking.payment_status = transactionStatus;
