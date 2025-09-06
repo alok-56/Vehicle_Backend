@@ -97,9 +97,9 @@ const Findservicesmechnic = async (req, res, next) => {
       status: APPLICATION_CONSTANT.APPROVE,
     };
 
-    // if (expert) {
-    //   query.isexpert = true;
-    // }
+    if (expert===true || expert==="true") {
+      query.isexpert = true;
+    }
 
     const isLocationFilterEnabled =
       lat !== "any" && lng !== "any" && radiusKm !== "any";
