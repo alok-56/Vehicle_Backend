@@ -83,23 +83,19 @@ const CreateNotification = async (req, res, next) => {
       await sendNotifications(deviceTokens, formattedData);
 
       // Save the notification to the database
-      const notification = new NotificationModel({
-        message,
-        type,
-        device_token: deviceTokens,
-      });
-
-      await notification.save();
-
-      return res.status(STATUS_CODE.SUCCESS).json({
-        status: true,
-        message: "Notification created and sent successfully",
-      });
     }
 
-    return res.status(STATUS_CODE.VALIDATIONERROR).json({
-      status: false,
-      message: "No Access Tokens Found to send notifications",
+    const notification = new NotificationModel({
+      message,
+      type,
+      device_token: deviceTokens,
+    });
+
+    await notification.save();
+
+    return res.status(STATUS_CODE.SUCCESS).json({
+      status: true,
+      message: "Notification created and sent successfully",
     });
   } catch (error) {
     return next(new AppError(error.message, STATUS_CODE.SERVERERROR));

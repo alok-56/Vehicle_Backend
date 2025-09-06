@@ -139,7 +139,7 @@ const VerifyMechanic = async (req, res, next) => {
         token: token,
         isverified: user.status === "approve" ? true : false,
         code: user.referral_code,
-         device_token: device_token,
+        device_token: device_token,
       });
     } else {
       // otp check
