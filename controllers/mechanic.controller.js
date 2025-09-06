@@ -292,12 +292,24 @@ const GetallMechanic = async (req, res, next) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
-    const { status } = req.query;
+    const { status, search } = req.query;
 
     // Create filter object
     const filter = {};
+
     if (status) {
       filter.status = status;
+    }
+
+    // Search by phone number (partial match)
+    if (search) {
+      filter.$expr = {
+        $regexMatch: {
+          input: { $toString: "$phone_number" }, // Convert number to string
+          regex: search,
+          options: "i",
+        },
+      };
     }
 
     const [users, total] = await Promise.all([
@@ -307,7 +319,7 @@ const GetallMechanic = async (req, res, next) => {
 
     res.status(STATUS_CODE.SUCCESS).json({
       status: true,
-      message: "User fetched successfully",
+      message: "Mechanics fetched successfully",
       currentPage: page,
       totalUsers: total,
       totalPages: Math.ceil(total / limit),
@@ -321,22 +333,30 @@ const GetallMechanic = async (req, res, next) => {
 // block Mechanic
 const blockMechanic = async (req, res, next) => {
   try {
-    let { id } = req.params;
+    const { id } = req.params;
     if (!id) {
       return next(new AppError("id is required", STATUS_CODE.NOTFOUND));
     }
 
-    let blockeduser = await Mechanicmodel.findByIdAndUpdate(
+    // Find user by ID
+    const mechanic = await Mechanicmodel.findById(id);
+    if (!mechanic) {
+      return next(new AppError("User not found", STATUS_CODE.NOTFOUND));
+    }
+
+    // Toggle the isBlocked status
+    const updatedMechanic = await Mechanicmodel.findByIdAndUpdate(
       id,
-      {
-        isBlocked: true,
-      },
+      { isBlocked: !mechanic.isBlocked },
       { new: true }
     );
 
     return res.status(STATUS_CODE.SUCCESS).json({
       status: true,
-      message: "user blocked successfully",
+      message: `User ${
+        updatedMechanic.isBlocked ? "blocked" : "unblocked"
+      } successfully`,
+      data: updatedMechanic,
     });
   } catch (error) {
     return next(new AppError(error.message, STATUS_CODE.SERVERERROR));

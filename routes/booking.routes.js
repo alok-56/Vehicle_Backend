@@ -16,6 +16,8 @@ const {
   GetAllmyEarning,
   mechanicwiseEarning,
   Paypayout,
+  GetAllpayments,
+  getLast7DaysStats,
 } = require("../controllers/booking.controller");
 const { Isuserormechanic } = require("../middleware/Isuserormechanic");
 const { Ismechanic } = require("../middleware/Ismechanic");
@@ -43,5 +45,7 @@ bookingRouter.get(
 bookingRouter.get("/earning", Ismechanic, GetAllmyEarning);
 bookingRouter.get("/earning/mechanic", Isadmin, mechanicwiseEarning);
 bookingRouter.post("/create/apyout", Isadmin, Paypayout);
+bookingRouter.get("/get/payments", Isadmin, GetAllpayments);
+bookingRouter.get("/get/dashboard", Isadmin, getLast7DaysStats);
 
 module.exports = bookingRouter;

@@ -90,11 +90,16 @@ const CreateNotification = async (req, res, next) => {
       });
 
       await notification.save();
+
+      return res.status(STATUS_CODE.SUCCESS).json({
+        status: true,
+        message: "Notification created and sent successfully",
+      });
     }
 
-    return res.status(STATUS_CODE.SUCCESS).json({
-      status: true,
-      message: "Notification created and sent successfully",
+    return res.status(STATUS_CODE.VALIDATIONERROR).json({
+      status: false,
+      message: "No Access Tokens Found to send notifications",
     });
   } catch (error) {
     return next(new AppError(error.message, STATUS_CODE.SERVERERROR));

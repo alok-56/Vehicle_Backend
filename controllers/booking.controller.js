@@ -97,8 +97,8 @@ const Findservicesmechnic = async (req, res, next) => {
       status: APPLICATION_CONSTANT.APPROVE,
     };
 
-    if(expert){
-      query.isexpert=true
+    if (expert) {
+      query.isexpert = true;
     }
 
     const isLocationFilterEnabled =
@@ -492,12 +492,23 @@ const Addaditionalservice = async (req, res, next) => {
 
 const GetAllbooking = async (req, res, next) => {
   try {
-    const { status, page = 1, limit = 10 } = req.query;
+    const { status, page = 1, limit = 10, search } = req.query;
     const skip = (page - 1) * limit;
 
     const query = {};
+
     if (status) {
       query.status = status;
+    }
+
+    if (search) {
+      query.$expr = {
+        $regexMatch: {
+          input: { $toString: "$_id" },
+          regex: search + "$",
+          options: "i",
+        },
+      };
     }
 
     const [bookings, total] = await Promise.all([
@@ -995,6 +1006,210 @@ const Paypayout = async (req, res, next) => {
   }
 };
 
+const GetAllpayments = async (req, res, next) => {
+  try {
+    const { status, page = 1, limit = 10, search } = req.query;
+    const skip = (page - 1) * limit;
+
+    const query = {
+      type:"payment"
+    };
+
+    if (status) {
+      query.status = status;
+    }
+
+    if (search) {
+      query.$expr = {
+        $regexMatch: {
+          input: { $toString: "$_id" },
+          regex: search + "$",
+          options: "i",
+        },
+      };
+    }
+
+    const [bookings, total] = await Promise.all([
+      Transactionmodel.find(query)
+        .skip(parseInt(skip))
+        .limit(parseInt(limit))
+        .sort({ createdAt: -1 })
+        .populate("userId", "name email phone_number")
+        .populate("mechnaicId", "name phone_number"),
+      Transactionmodel.countDocuments(query),
+    ]);
+
+    res.status(STATUS_CODE.SUCCESS).json({
+      status: true,
+      message: "Payments fetched",
+      total,
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(total / limit),
+      data: bookings,
+    });
+  } catch (error) {
+    return next(new AppError(error.message, STATUS_CODE.SERVERERROR));
+  }
+};
+
+const getLast7DaysStats = async (req, res, next) => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const last7Days = new Date(today);
+    last7Days.setDate(today.getDate() - 6);
+
+    // ✅ Aggregate data for total stats
+    const [totalStats] = await Bookingsmodel.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalBookings: { $sum: 1 },
+          totalEarnings: { $sum: "$payment_details.totalamount" },
+        },
+      },
+    ]);
+
+    // ✅ Today's stats
+    const [todayStats] = await Bookingsmodel.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: today, $lt: tomorrow },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          todayBookings: { $sum: 1 },
+          todayEarnings: { $sum: "$payment_details.totalamount" },
+        },
+      },
+    ]);
+
+    // ✅ Yesterday's stats
+    const [yesterdayStats] = await Bookingsmodel.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: yesterday, $lt: today },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          yesterdayBookings: { $sum: 1 },
+          yesterdayEarnings: { $sum: "$payment_details.totalamount" },
+        },
+      },
+    ]);
+
+    // ✅ Last 7 days for charts (use %Y-%m-%d instead of %a)
+    const last7DaysStats = await Bookingsmodel.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: last7Days, $lte: tomorrow },
+        },
+      },
+      {
+        $group: {
+          _id: { date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } } },
+          bookings: { $sum: 1 },
+          earnings: { $sum: "$payment_details.totalamount" },
+        },
+      },
+      { $sort: { "_id.date": 1 } },
+    ]);
+
+    // ✅ Convert MongoDB date string to weekday (Mon, Tue, etc.)
+    const chartData = last7DaysStats.map((item) => {
+      const date = new Date(item._id.date);
+      const day = date.toLocaleString("en-US", { weekday: "short" }); // Mon, Tue, etc.
+      return {
+        day,
+        bookings: item.bookings,
+        earnings: item.earnings,
+      };
+    });
+
+    // ✅ Extract values
+    const totalBookings = totalStats?.totalBookings || 0;
+    const totalEarnings = totalStats?.totalEarnings || 0;
+    const todayBookings = todayStats?.todayBookings || 0;
+    const todayEarnings = todayStats?.todayEarnings || 0;
+    const yesterdayBookings = yesterdayStats?.yesterdayBookings || 0;
+    const yesterdayEarnings = yesterdayStats?.yesterdayEarnings || 0;
+
+    // ✅ Calculate % Change and Trend
+    const calculateChange = (todayVal, yesterdayVal) => {
+      if (yesterdayVal === 0 && todayVal > 0) return { change: "+100%", trend: "up" };
+      if (yesterdayVal === 0 && todayVal === 0) return { change: "0%", trend: "neutral" };
+      const diff = ((todayVal - yesterdayVal) / yesterdayVal) * 100;
+      return {
+        change: `${diff > 0 ? "+" : ""}${diff.toFixed(2)}%`,
+        trend: diff >= 0 ? "up" : "down",
+      };
+    };
+
+    const bookingChange = calculateChange(todayBookings, yesterdayBookings);
+    const earningChange = calculateChange(todayEarnings, yesterdayEarnings);
+
+    // ✅ Stats Data
+    const stats = [
+      {
+        title: "Total Bookings",
+        value: totalBookings.toLocaleString(),
+        change: "N/A",
+        trend: "neutral",
+        icon: "Calendar",
+        color: "text-success",
+      },
+      {
+        title: "Total Earnings",
+        value: `₹${totalEarnings.toLocaleString()}`,
+        change: "N/A",
+        trend: "neutral",
+        icon: "IndianRupee",
+        color: "text-info",
+      },
+      {
+        title: "Today Booking",
+        value: todayBookings.toLocaleString(),
+        change: bookingChange.change,
+        trend: bookingChange.trend,
+        icon: "DollarSign",
+        color: bookingChange.trend === "up" ? "text-success" : "text-danger",
+      },
+      {
+        title: "Today Earning",
+        value: `₹${todayEarnings.toLocaleString()}`,
+        change: earningChange.change,
+        trend: earningChange.trend,
+        icon: "DollarSign",
+        color: earningChange.trend === "up" ? "text-success" : "text-danger",
+      },
+    ];
+
+    res.status(200).json({
+      status: true,
+      message: "Dashboard data fetched successfully",
+      stats,
+      charts: {
+        bookingData: chartData,
+        earningsData: chartData.map(({ day, earnings }) => ({ day, amount: earnings })),
+      },
+    });
+  } catch (error) {
+    return next(new AppError(error.message, STATUS_CODE.SERVERERROR));
+  }
+};
+
+
 module.exports = {
   createEmergencyBooking,
   respondToBooking,
@@ -1010,4 +1225,6 @@ module.exports = {
   GetAllmyEarning,
   mechanicwiseEarning,
   Paypayout,
+  GetAllpayments,
+  getLast7DaysStats
 };

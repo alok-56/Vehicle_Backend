@@ -24,11 +24,10 @@ const GetAllMyreferral = async (req, res, next) => {
         let user = await Usermodel.findById(ref.userid).select(
           "name email phone_number profilepicture"
         );
-        console.log(ref)
+        console.log(ref);
         let mechanic = await Mechanicmodel.findById(ref.userid).select(
           "name email phone_number documents.profile_photo"
         );
-
 
         return {
           ...ref.toObject(),
@@ -37,8 +36,6 @@ const GetAllMyreferral = async (req, res, next) => {
         };
       })
     );
-
-    
 
     return res.status(STATUS_CODE.SUCCESS).json({
       status: true,
@@ -97,7 +94,6 @@ const PayLoyalityAmount = async (req, res, next) => {
 // Get Mypay Loyality
 const GetMyPayLoyality = async (req, res, next) => {
   try {
-
     const payments = await Loyalitypaymodel.find({
       userid: req.user,
     }).sort({ createdAt: -1 });

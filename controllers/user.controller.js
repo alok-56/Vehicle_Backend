@@ -214,15 +214,28 @@ const GetallUser = async (req, res, next) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
+    const search = req.query.search;
+
+    const query = {};
+
+    if (search) {
+      query.$expr = {
+        $regexMatch: {
+          input: { $toString: "$phone_number" }, // Convert number to string
+          regex: search,
+          options: "i"
+        }
+      };
+    }
 
     const [users, total] = await Promise.all([
-      Usermodel.find().skip(skip).limit(limit).lean(),
-      Usermodel.countDocuments(),
+      Usermodel.find(query).skip(skip).limit(limit).lean(),
+      Usermodel.countDocuments(query),
     ]);
 
     res.status(STATUS_CODE.SUCCESS).json({
       status: true,
-      message: "user fetched successfully",
+      message: "User fetched successfully",
       currentPage: page,
       totalUsers: total,
       totalPages: Math.ceil(total / limit),
@@ -236,22 +249,29 @@ const GetallUser = async (req, res, next) => {
 // block user
 const blockuser = async (req, res, next) => {
   try {
-    let { id } = req.params;
+    const { id } = req.params;
+
     if (!id) {
-      return next(new AppError("id is required", STATUS_CODE.NOTFOUND));
+      return next(new AppError("User ID is required", STATUS_CODE.NOTFOUND));
     }
 
-    let blockeduser = await Usermodel.findByIdAndUpdate(
-      id,
-      {
-        isBlocked: true,
-      },
-      { new: true }
-    );
+    // Find the user first
+    const user = await Usermodel.findById(id);
+    if (!user) {
+      return next(new AppError("User not found", STATUS_CODE.NOTFOUND));
+    }
+
+    // Toggle the status
+    user.isBlocked = !user.isBlocked;
+    await user.save();
 
     return res.status(STATUS_CODE.SUCCESS).json({
       status: true,
-      message: "user blocked successfully",
+      message: `User ${user.isBlocked ? "blocked" : "unblocked"} successfully`,
+      data: {
+        id: user._id,
+        isBlocked: user.isBlocked,
+      },
     });
   } catch (error) {
     return next(new AppError(error.message, STATUS_CODE.SERVERERROR));
