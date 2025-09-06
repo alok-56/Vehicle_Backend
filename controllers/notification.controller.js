@@ -4,13 +4,14 @@ const NotificationModel = require("../models/notification.model");
 const Mechanicmodel = require("../models/mechanic.model");
 const { sendNotifications } = require("../utilits/firebase");
 const Usermodel = require("../models/user.model");
+const { default: mongoose } = require("mongoose");
 
-// create notification
 const CreateNotification = async (req, res, next) => {
   try {
+    console.log("🔥 Incoming CreateNotification Request Body:", req.body);
     const { message, type, user_id, mechanicid } = req.body;
 
-    // Check if message is provided
+    // Validate message
     if (!message) {
       return next(
         new AppError("Message is required", STATUS_CODE.VALIDATIONERROR)
@@ -19,49 +20,42 @@ const CreateNotification = async (req, res, next) => {
 
     let deviceTokens = [];
 
-    // Determine the recipient(s) based on type
+  
+
     if (type === "mechanic") {
       if (!mechanicid) {
         return next(
-          new AppError(
-            "Mechanic ID is required for mechanic notifications",
-            STATUS_CODE.VALIDATIONERROR
-          )
+          new AppError("Mechanic ID is required", STATUS_CODE.VALIDATIONERROR)
         );
       }
       const mechanic = await Mechanicmodel.findById(mechanicid);
       if (mechanic && mechanic.device_token) {
-        deviceTokens = [mechanic.device_token]; // Add mechanic token
+        deviceTokens.push(mechanic.device_token);
       }
     } else if (type === "user") {
       if (!user_id) {
         return next(
-          new AppError(
-            "User ID is required for user notifications",
-            STATUS_CODE.VALIDATIONERROR
-          )
+          new AppError("User ID is required", STATUS_CODE.VALIDATIONERROR)
         );
       }
       const user = await Usermodel.findById(user_id);
       if (user && user.device_token) {
-        deviceTokens = [user.device_token]; // Add user token
+        deviceTokens.push(user.device_token);
       }
     } else if (type === "all") {
-      // Fetch all mechanics with valid tokens
+      console.log("➡ Sending notification to ALL users & mechanics");
       const mechanics = await Mechanicmodel.find({
         device_token: { $exists: true, $ne: null },
       });
-      const mechanicTokens = mechanics
-        .map((m) => m.device_token)
-        .filter(Boolean);
-
-      // Fetch all users with valid tokens
       const users = await Usermodel.find({
         device_token: { $exists: true, $ne: null },
       });
+
+      const mechanicTokens = mechanics
+        .map((m) => m.device_token)
+        .filter(Boolean);
       const userTokens = users.map((u) => u.device_token).filter(Boolean);
 
-      // Combine all tokens
       deviceTokens = [...mechanicTokens, ...userTokens];
     } else {
       return next(
@@ -69,39 +63,38 @@ const CreateNotification = async (req, res, next) => {
       );
     }
 
-    // Remove duplicate tokens from the array
-    deviceTokens = [...new Set(deviceTokens)];
+    deviceTokens = [...new Set(deviceTokens)]; 
 
-    // If there are valid device tokens, send the notifications
-    if (deviceTokens.length > 0) {
-      const formattedData = {
-        body: String(message),
-        title: String("New Notification"),
-      };
-
-      // Send notifications
-      await sendNotifications(deviceTokens, formattedData);
-
-      // Save the notification to the database
-    }
 
     const notification = new NotificationModel({
       message,
       type,
-      device_token: deviceTokens,
+      device_token: type === "all" ? [] : deviceTokens,
     });
 
     await notification.save();
 
-    return res.status(STATUS_CODE.SUCCESS).json({
+    res.status(STATUS_CODE.SUCCESS).json({
       status: true,
       message: "Notification created and sent successfully",
+      data: notification,
+    });
+
+    setImmediate(async () => {
+      if (deviceTokens.length > 0) {
+        const payload = {
+          title: "New Notification",
+          body: message,
+        };
+        await sendNotifications(deviceTokens, payload); 
+      } else {
+        console.log("⚠ No device tokens available for sending notification.");
+      }
     });
   } catch (error) {
     return next(new AppError(error.message, STATUS_CODE.SERVERERROR));
   }
 };
-
 // get all notifications
 const GetAllNotifications = async (req, res, next) => {
   try {
@@ -160,10 +153,19 @@ const DeleteNotification = async (req, res, next) => {
 const GetMyNotification = async (req, res, next) => {
   try {
     let { token } = req.body;
-    const [notifications] = await NotificationModel.find({
-      device_token: { $in: token },
-      type: "all",
-    })
+    let { type = "all" } = req.query;
+
+    // Build query dynamically
+    let query = {};
+
+    if (type !== "all") {
+      query.type = type;
+      if (token) {
+        query.device_token = { $in: token };
+      }
+    }
+
+    const notifications = await NotificationModel.find(query)
       .sort({ createdAt: -1 })
       .lean();
 

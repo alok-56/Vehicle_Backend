@@ -12,6 +12,7 @@ const {
   UpdateMechanicProfile,
   UpdatemechanicLocation,
   GetmechanicLocation,
+  ToggleMechanicExpertise,
 } = require("../controllers/mechanic.controller");
 const { Ismechanic } = require("../middleware/Ismechanic");
 const { Isadmin } = require("../middleware/Isadmin");
@@ -32,5 +33,6 @@ mechanicRouter.get("/ownprofile", Ismechanic, GetMechOwnprofile);
 mechanicRouter.patch("/update", Ismechanic, UpdateMechanicProfile);
 mechanicRouter.patch("/update/location", Ismechanic, UpdatemechanicLocation);
 mechanicRouter.get("/get/location", Isuser, GetmechanicLocation);
+mechanicRouter.patch("/toggle/expert/:id", Isadmin, ToggleMechanicExpertise);
 
 module.exports = mechanicRouter;

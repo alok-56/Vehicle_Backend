@@ -526,6 +526,31 @@ const GetmechanicLocation = async (req, res, next) => {
   }
 };
 
+// toggle Mechanic expertise
+
+const ToggleMechanicExpertise = async (req, res, next) => {
+  try {
+    let { id } = req.params;
+    const mechanic = await Mechanicmodel.findById(id);
+    if (!mechanic) {
+      return next(new AppError("Mechanic not found", STATUS_CODE.NOTFOUND));
+    }
+
+    // Toggle the boolean value
+    mechanic.isexpert = !mechanic.isexpert;
+
+    await mechanic.save();
+
+    return res.status(STATUS_CODE.SUCCESS).json({
+      status: true,
+      message: "Mechanic expertise toggled successfully",
+      data: mechanic,
+    });
+  } catch (error) {
+    return next(new AppError(error.message, STATUS_CODE.SERVERERROR));
+  }
+};
+
 module.exports = {
   CreateMechanic,
   VerifyMechanic,
@@ -539,4 +564,5 @@ module.exports = {
   UpdateMechanicProfile,
   UpdatemechanicLocation,
   GetmechanicLocation,
+  ToggleMechanicExpertise,
 };

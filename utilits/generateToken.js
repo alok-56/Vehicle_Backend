@@ -3,13 +3,13 @@ const { encryptData } = require("./Encryption");
 require("dotenv").config();
 
 const GenerateToken = async (id) => {
-  console.log(process.env.JWT_SCRECT)
+  console.log(process.env.JWT_SCRECT);
   let token = jwt.sign(
     {
       data: id,
     },
     process.env.JWT_SCRECT,
-    { expiresIn: "60h" }
+    { expiresIn: "240h" }
   );
   let encrypttoken = await encryptData(token);
   return encrypttoken;

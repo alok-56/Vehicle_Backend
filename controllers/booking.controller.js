@@ -89,15 +89,13 @@ const Findservicesmechnic = async (req, res, next) => {
       },
     }).distinct("mechanicid");
 
-    console.log(bookedMechanics);
-
     const query = {
       vehicle_type: vehicle_type,
       _id: { $nin: bookedMechanics },
       status: APPLICATION_CONSTANT.APPROVE,
     };
 
-    if (expert===true || expert==="true") {
+    if (expert === true || expert === "true") {
       query.isexpert = true;
     }
 
@@ -1012,7 +1010,7 @@ const GetAllpayments = async (req, res, next) => {
     const skip = (page - 1) * limit;
 
     const query = {
-      type:"payment"
+      type: "payment",
     };
 
     if (status) {
@@ -1066,8 +1064,22 @@ const getLast7DaysStats = async (req, res, next) => {
     const last7Days = new Date(today);
     last7Days.setDate(today.getDate() - 6);
 
+    // ✅ Allowed statuses
+    const allowedStatuses = [
+      "completed",
+      "userconform",
+      "ratinggiven",
+      "pending",
+      "accecpted",
+    ];
+
     // ✅ Aggregate data for total stats
     const [totalStats] = await Bookingsmodel.aggregate([
+      {
+        $match: {
+          status: { $in: allowedStatuses },
+        },
+      },
       {
         $group: {
           _id: null,
@@ -1082,6 +1094,7 @@ const getLast7DaysStats = async (req, res, next) => {
       {
         $match: {
           createdAt: { $gte: today, $lt: tomorrow },
+          status: { $in: allowedStatuses },
         },
       },
       {
@@ -1098,6 +1111,7 @@ const getLast7DaysStats = async (req, res, next) => {
       {
         $match: {
           createdAt: { $gte: yesterday, $lt: today },
+          status: { $in: allowedStatuses },
         },
       },
       {
@@ -1109,16 +1123,19 @@ const getLast7DaysStats = async (req, res, next) => {
       },
     ]);
 
-    // ✅ Last 7 days for charts (use %Y-%m-%d instead of %a)
+    // ✅ Last 7 days for charts
     const last7DaysStats = await Bookingsmodel.aggregate([
       {
         $match: {
           createdAt: { $gte: last7Days, $lte: tomorrow },
+          status: { $in: allowedStatuses },
         },
       },
       {
         $group: {
-          _id: { date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } } },
+          _id: {
+            date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          },
           bookings: { $sum: 1 },
           earnings: { $sum: "$payment_details.totalamount" },
         },
@@ -1147,8 +1164,10 @@ const getLast7DaysStats = async (req, res, next) => {
 
     // ✅ Calculate % Change and Trend
     const calculateChange = (todayVal, yesterdayVal) => {
-      if (yesterdayVal === 0 && todayVal > 0) return { change: "+100%", trend: "up" };
-      if (yesterdayVal === 0 && todayVal === 0) return { change: "0%", trend: "neutral" };
+      if (yesterdayVal === 0 && todayVal > 0)
+        return { change: "+100%", trend: "up" };
+      if (yesterdayVal === 0 && todayVal === 0)
+        return { change: "0%", trend: "neutral" };
       const diff = ((todayVal - yesterdayVal) / yesterdayVal) * 100;
       return {
         change: `${diff > 0 ? "+" : ""}${diff.toFixed(2)}%`,
@@ -1201,14 +1220,16 @@ const getLast7DaysStats = async (req, res, next) => {
       stats,
       charts: {
         bookingData: chartData,
-        earningsData: chartData.map(({ day, earnings }) => ({ day, amount: earnings })),
+        earningsData: chartData.map(({ day, earnings }) => ({
+          day,
+          amount: earnings,
+        })),
       },
     });
   } catch (error) {
     return next(new AppError(error.message, STATUS_CODE.SERVERERROR));
   }
 };
-
 
 module.exports = {
   createEmergencyBooking,
@@ -1226,5 +1247,5 @@ module.exports = {
   mechanicwiseEarning,
   Paypayout,
   GetAllpayments,
-  getLast7DaysStats
+  getLast7DaysStats,
 };

@@ -20,8 +20,8 @@ admin.initializeApp({
 });
 
 async function sendNotifications(tokens = [], data = {}) {
-  if (!tokens || tokens.length === 0) {
-    throw new Error("Tokens must be a non-empty array");
+  if (!Array.isArray(tokens) || tokens.length === 0) {
+    return;
   }
 
   const formattedData = {};
@@ -29,12 +29,12 @@ async function sendNotifications(tokens = [], data = {}) {
     formattedData[key] = String(data[key]);
   }
 
-  const promises = tokens.map((token) => {
+  const promises = tokens.map(async (token) => {
     const message = {
       token,
       notification: {
-        title: data?.title,
-        body: data?.body,
+        title: data?.title || "Notification",
+        body: data?.body || "",
       },
       data: formattedData,
       android: {
@@ -44,15 +44,28 @@ async function sendNotifications(tokens = [], data = {}) {
         },
       },
     };
-    return admin.messaging().send(message);
+
+    try {
+      const response = await admin.messaging().send(message);
+      return { token, status: "success" };
+    } catch (error) {
+      if (
+        error.code === "messaging/invalid-argument" ||
+        error.code === "messaging/registration-token-not-registered"
+      ) {
+        await notificationmodel.updateMany(
+          { device_token: token },
+          { $pull: { device_token: token } }
+        );
+      }
+
+      return { token, status: "failed", error: error.message };
+    }
   });
 
-  try {
-    const responses = await Promise.all(promises);
-    return responses;
-  } catch (error) {
-    throw error;
-  }
+  const results = await Promise.all(promises);
+  console.log(results);
+  return results;
 }
 
 module.exports = { sendNotifications };
