@@ -134,6 +134,7 @@ const VerifyUser = async (req, res, next) => {
         message: "User logedin successfully",
         token: token,
         code: user.referral_code,
+         device_token: device_token,
       });
     } else {
       // otp check
