@@ -20,8 +20,6 @@ const CreateNotification = async (req, res, next) => {
 
     let deviceTokens = [];
 
-  
-
     if (type === "mechanic") {
       if (!mechanicid) {
         return next(
@@ -63,8 +61,7 @@ const CreateNotification = async (req, res, next) => {
       );
     }
 
-    deviceTokens = [...new Set(deviceTokens)]; 
-
+    deviceTokens = [...new Set(deviceTokens)];
 
     const notification = new NotificationModel({
       message,
@@ -86,7 +83,7 @@ const CreateNotification = async (req, res, next) => {
           title: "New Notification",
           body: message,
         };
-        await sendNotifications(deviceTokens, payload); 
+        await sendNotifications(deviceTokens, payload);
       } else {
         console.log("⚠ No device tokens available for sending notification.");
       }
@@ -95,6 +92,7 @@ const CreateNotification = async (req, res, next) => {
     return next(new AppError(error.message, STATUS_CODE.SERVERERROR));
   }
 };
+
 // get all notifications
 const GetAllNotifications = async (req, res, next) => {
   try {
